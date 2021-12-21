@@ -21,7 +21,6 @@ type AddressCreateRequest struct {
 }
 
 type AddressUpdateRequest struct {
-	Id         string
 	Address    string  `json:"address"`
 	City       string  `json:"city"`
 	Province   string  `json:"province"`

@@ -10,10 +10,8 @@ type ImageResponse struct {
 
 type ImageCreateRequest struct {
 	FileName string `json:"file_name"`
-	URL      string `json:"url"`
 }
 
 type ImageUpdateRequest struct {
 	FileName string `json:"file_name"`
-	URL      string `json:"url"`
 }
