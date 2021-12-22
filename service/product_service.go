@@ -13,9 +13,10 @@ type ProductService interface {
 	Create(ctx context.Context, request web.ProductCreateRequest, file interface{}) web.ProductCreateRequest
 	FindById(ctx context.Context, productId string) web.ProductResponse
 	FindAll(ctx context.Context) []web.ProductResponseAll
-	Update(ctx context.Context, request web.ProductCreateRequest) web.ProductCreateRequest
-	Delete(ctx context.Context, productId string)
+	Update(ctx context.Context, request web.ProductUpdateRequest) web.ProductUpdateRequest
 	PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest
+	PullImageFromImages(ctx context.Context, productId string, imageId string)
+	Delete(ctx context.Context, productId string)
 }
 
 type productServiceImpl struct {
@@ -154,8 +155,56 @@ func (service *productServiceImpl) FindAll(ctx context.Context) []web.ProductRes
 	return productsResponse
 }
 
-func (service *productServiceImpl) Update(ctx context.Context, request web.ProductCreateRequest) web.ProductCreateRequest {
-	panic("implement me")
+func (service *productServiceImpl) Update(ctx context.Context, request web.ProductUpdateRequest) web.ProductUpdateRequest {
+	product, err := service.ProductRepository.FindById(ctx, request.Id)
+	helper.PanicIfError(err)
+
+	var categoriesUpdateRequest []*domain.ProductCategory
+	for _, category := range request.Categories {
+		ctgry, errCtgry := service.CategoryRepository.FindById(ctx, category.CategoryId)
+		helper.PanicIfError(errCtgry)
+		categoriesUpdateRequest = append(categoriesUpdateRequest, &domain.ProductCategory{
+			CategoryId: ctgry.Id.Hex(),
+		})
+	}
+
+	_, errUpdate := service.ProductRepository.Update(ctx, domain.Product{
+		Id:          product.Id,
+		UpdatedAt:   helper.GetTimeNow(),
+		Name:        request.Name,
+		Description: request.Description,
+		Price:       request.Price,
+		Quantity:    request.Quantity,
+		Categories:  categoriesUpdateRequest,
+	})
+	helper.PanicIfError(errUpdate)
+	return request
+}
+
+func (service *productServiceImpl) PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest {
+	product, err := service.ProductRepository.FindById(ctx, productId)
+	helper.PanicIfError(err)
+	res, errPush := service.ProductRepository.PushImageIntoImages(ctx, product.Id.Hex(), domain.Image{
+		Id:       primitive.NewObjectID(),
+		FileName: request.FileName,
+	})
+	helper.PanicIfError(errPush)
+
+	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.FileName, file)
+	helper.PanicIfError(errUpload)
+	return request
+}
+
+func (service *productServiceImpl) PullImageFromImages(ctx context.Context, productId string, imageId string) {
+	product, err := service.ProductRepository.FindById(ctx, productId)
+	helper.PanicIfError(err)
+
+	res, errPull := service.ProductRepository.PullImageFromImages(ctx, product.Id.Hex(), imageId)
+	helper.PanicIfError(errPull)
+
+	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, res.FileName)
+	helper.PanicIfError(errDeleteImg)
+
 }
 
 func (service *productServiceImpl) Delete(ctx context.Context, productId string) {
@@ -172,18 +221,4 @@ func (service *productServiceImpl) Delete(ctx context.Context, productId string)
 		errDeleteImage := service.CloudinaryRepository.DeleteImage(ctx, image.FileName)
 		helper.PanicIfError(errDeleteImage)
 	}
-}
-
-func (service *productServiceImpl) PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest {
-	product, err := service.ProductRepository.FindById(ctx, productId)
-	helper.PanicIfError(err)
-	res, errPush := service.ProductRepository.PushImageIntoImages(ctx, product.Id.Hex(), domain.Image{
-		Id:       primitive.NewObjectID(),
-		FileName: request.FileName,
-	})
-	helper.PanicIfError(errPush)
-
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.FileName, file)
-	helper.PanicIfError(errUpload)
-	return request
 }

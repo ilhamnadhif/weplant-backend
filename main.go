@@ -100,8 +100,10 @@ func main() {
 	productRouter.POST("/", productController.Create)
 	productRouter.GET("/:productId", productController.FindById)
 	productRouter.GET("/", productController.FindAll)
-	productRouter.DELETE("/:productId", productController.Delete)
+	productRouter.PUT("/:productId", productController.Update)
 	productRouter.POST("/:productId/images", productController.PushImageIntoImages)
+	productRouter.DELETE("/:productId/images/:imageId", productController.PullImageFromImages)
+	productRouter.DELETE("/:productId", productController.Delete)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {
