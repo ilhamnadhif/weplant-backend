@@ -7,5 +7,5 @@ type Category struct {
 	CreatedAt int                `bson:"created_at,omitempty"`
 	UpdatedAt int                `bson:"updated_at,omitempty"`
 	Name      string             `bson:"name,omitempty"`
-	Image     *Image             `bson:"image,omitempty"`
+	MainImage *Image             `bson:"image,omitempty"`
 }

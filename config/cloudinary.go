@@ -8,11 +8,9 @@ import (
 
 func GetCloud() *cloudinary.Cloudinary {
 
-	cloudName := os.Getenv("CLOUDINARY_NAME")
-	cloudKey := os.Getenv("CLOUDINARY_KEY")
-	cloudSecret := os.Getenv("CLOUDINARY_SECRET")
+	cloudUrl := os.Getenv("CLOUDINARY_URL")
+	cld, errorCloud := cloudinary.NewFromURL(cloudUrl)
 
-	cld, errorCloud := cloudinary.NewFromParams(cloudName, cloudKey, cloudSecret)
 	helper.PanicIfError(errorCloud)
 	return cld
 }

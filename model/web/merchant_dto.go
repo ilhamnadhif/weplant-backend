@@ -30,18 +30,3 @@ type MerchantUpdateImageRequest struct {
 	Id        string              `json:"id"`
 	MainImage *ImageUpdateRequest `json:"main_image,omitempty"`
 }
-
-//type MerchantProduct struct {
-//
-//}
-//
-//type MerchantResponseWithProduct struct {
-//	Id        string           `json:"id"`
-//	CreatedAt int              `json:"created_at"`
-//	UpdatedAt int              `json:"updated_at"`
-//	Name      string           `json:"name"`
-//	Phone     string           `json:"phone"`
-//	MainImage *ImageResponse   `json:"main_image"`
-//	Address   *AddressResponse `json:"address"`
-//	Products []*
-//}

@@ -40,16 +40,33 @@ func main() {
 			Options: options.Index().SetUnique(true),
 		},
 	})
+	categoryCollection := database.Collection("category")
+	categoryCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "name", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+
+	productCollection := database.Collection("product")
+	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "name", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
 
 	// repository
-	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
+	merchantRepository := repository.NewMerchantRepository(merchantCollection)
+	categoryRepository := repository.NewCategoryRepository(categoryCollection)
+	productRepository := repository.NewProductRepository(productCollection)
 
 	// service
 	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository)
+	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
+	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository)
 
 	// controller
 	merchantController := controller.NewMerchantController(merchantService)
+	categoryController := controller.NewCategoryController(categoryService)
+	productController := controller.NewProductController(productService)
 
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -67,9 +84,24 @@ func main() {
 	merchantRouter := v1.Group("/merchants")
 	merchantRouter.POST("/", merchantController.Create)
 	merchantRouter.GET("/:merchantId", merchantController.FindById)
-	merchantRouter.PUT("/:merchantId", merchantController.UpdateById)
-	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImageById)
-	merchantRouter.DELETE("/:merchantId", merchantController.DeleteById)
+	merchantRouter.PUT("/:merchantId", merchantController.Update)
+	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
+	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
+
+	categoryRouter := v1.Group("/categories")
+	categoryRouter.POST("/", categoryController.Create)
+	categoryRouter.GET("/:categoryId", categoryController.FindById)
+	categoryRouter.GET("/", categoryController.FindAll)
+	categoryRouter.PUT("/:categoryId", categoryController.Update)
+	categoryRouter.PATCH("/:categoryId/image", categoryController.UpdateMainImage)
+	categoryRouter.DELETE("/:categoryId", categoryController.Delete)
+
+	productRouter := v1.Group("/products")
+	productRouter.POST("/", productController.Create)
+	productRouter.GET("/:productId", productController.FindById)
+	productRouter.GET("/", productController.FindAll)
+	productRouter.DELETE("/:productId", productController.Delete)
+	productRouter.POST("/:productId/images", productController.PushImageIntoImages)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {

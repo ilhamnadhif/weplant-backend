@@ -12,9 +12,9 @@ import (
 type MerchantController interface {
 	Create(c *gin.Context)
 	FindById(c *gin.Context)
-	UpdateById(c *gin.Context)
-	UpdateMainImageById(c *gin.Context)
-	DeleteById(c *gin.Context)
+	Update(c *gin.Context)
+	UpdateMainImage(c *gin.Context)
+	Delete(c *gin.Context)
 }
 
 type merchantControllerImpl struct {
@@ -91,7 +91,7 @@ func (controller *merchantControllerImpl) FindById(c *gin.Context) {
 	})
 }
 
-func (controller *merchantControllerImpl) UpdateById(c *gin.Context) {
+func (controller *merchantControllerImpl) Update(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("merchantId")
 
@@ -102,7 +102,7 @@ func (controller *merchantControllerImpl) UpdateById(c *gin.Context) {
 	if errBind != nil {
 		panic(helper.IfValidationError(errBind))
 	}
-	res := controller.MerchantService.UpdateById(ctx, merchantUpdateRequest)
+	res := controller.MerchantService.Update(ctx, merchantUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",
@@ -110,7 +110,7 @@ func (controller *merchantControllerImpl) UpdateById(c *gin.Context) {
 	})
 }
 
-func (controller *merchantControllerImpl) UpdateMainImageById(c *gin.Context) {
+func (controller *merchantControllerImpl) UpdateMainImage(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("merchantId")
 
@@ -123,7 +123,7 @@ func (controller *merchantControllerImpl) UpdateMainImageById(c *gin.Context) {
 	helper.PanicIfError(errorFormFile)
 	filename := helper.GetFileName(image.Filename)
 
-	res := controller.MerchantService.UpdateMainImageById(ctx, web.MerchantUpdateImageRequest{
+	res := controller.MerchantService.UpdateMainImage(ctx, web.MerchantUpdateImageRequest{
 		Id: id,
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
@@ -136,7 +136,7 @@ func (controller *merchantControllerImpl) UpdateMainImageById(c *gin.Context) {
 	})
 }
 
-func (controller *merchantControllerImpl) DeleteById(c *gin.Context) {
+func (controller *merchantControllerImpl) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("merchantId")
 

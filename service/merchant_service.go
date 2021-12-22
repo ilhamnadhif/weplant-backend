@@ -12,8 +12,8 @@ import (
 type MerchantService interface {
 	Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest
 	FindById(ctx context.Context, merchantId string) web.MerchantResponse
-	UpdateById(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest
-	UpdateMainImageById(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest
+	Update(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest
+	UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest
 	Delete(ctx context.Context, merchantId string)
 }
 
@@ -30,18 +30,16 @@ func NewMerchantService(merchantRepository repository.MerchantRepository, cloudi
 }
 
 func (service *merchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest {
-
-	res, err := service.MerchantRepository.Create(ctx, domain.Merchant{
-		CreatedAt: helper.GetTimeNow(),
-		UpdatedAt: helper.GetTimeNow(),
+	timeNow := helper.GetTimeNow()
+	_, err := service.MerchantRepository.Create(ctx, domain.Merchant{
+		CreatedAt: timeNow,
+		UpdatedAt: timeNow,
 		Email:     request.Email,
 		Password:  helper.HashPassword(request.Password),
 		Name:      request.Name,
 		Phone:     request.Phone,
 		MainImage: &domain.Image{
 			Id:        primitive.NewObjectID(),
-			CreatedAt: helper.GetTimeNow(),
-			UpdatedAt: helper.GetTimeNow(),
 			FileName:  request.MainImage.FileName,
 		},
 		Address: &domain.Address{
@@ -59,25 +57,7 @@ func (service *merchantServiceImpl) Create(ctx context.Context, request web.Merc
 	errUpload := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, file)
 	helper.PanicIfError(errUpload)
 
-	return web.MerchantCreateRequest{
-		Email:    res.Email,
-		Password: res.Password,
-		Name:     res.Name,
-		Phone:    res.Phone,
-		MainImage: &web.ImageCreateRequest{
-
-			FileName: res.MainImage.FileName,
-		},
-		Address: &web.AddressCreateRequest{
-			Address:    res.Address.Address,
-			City:       request.Address.City,
-			Province:   res.Address.Province,
-			Country:    res.Address.Country,
-			PostalCode: res.Address.PostalCode,
-			Latitude:   res.Address.Latitude,
-			Longitude:  res.Address.Longitude,
-		},
-	}
+	return request
 }
 
 func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId string) web.MerchantResponse {
@@ -95,8 +75,6 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 		Phone:     res.Phone,
 		MainImage: &web.ImageResponse{
 			Id:        res.MainImage.Id.Hex(),
-			CreatedAt: res.MainImage.CreatedAt,
-			UpdatedAt: res.MainImage.UpdatedAt,
 			FileName:  res.MainImage.FileName,
 			URL:       imgUrl,
 		},
@@ -112,11 +90,11 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 	}
 }
 
-func (service *merchantServiceImpl) UpdateById(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest {
+func (service *merchantServiceImpl) Update(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest {
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	res, errUpdate := service.MerchantRepository.UpdateById(ctx, domain.Merchant{
+	_, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: helper.GetTimeNow(),
 		Name:      request.Name,
@@ -132,32 +110,18 @@ func (service *merchantServiceImpl) UpdateById(ctx context.Context, request web.
 		},
 	})
 	helper.PanicIfError(errUpdate)
-	return web.MerchantUpdateRequest{
-		Id:    res.Id.Hex(),
-		Name:  res.Name,
-		Phone: res.Phone,
-		Address: &web.AddressUpdateRequest{
-			Address:    res.Address.Address,
-			City:       res.Address.City,
-			Province:   res.Address.Province,
-			Country:    res.Address.Country,
-			PostalCode: res.Address.PostalCode,
-			Latitude:   res.Address.Latitude,
-			Longitude:  res.Address.Longitude,
-		},
-	}
+	return request
 }
 
-func (service *merchantServiceImpl) UpdateMainImageById(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest {
+func (service *merchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest {
+	timeNow := helper.GetTimeNow()
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	res, errUpdate := service.MerchantRepository.UpdateById(ctx, domain.Merchant{
+	res, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
-		UpdatedAt: helper.GetTimeNow(),
+		UpdatedAt: timeNow,
 		MainImage: &domain.Image{
-			CreatedAt: helper.GetTimeNow(),
-			UpdatedAt: helper.GetTimeNow(),
 			FileName:  request.MainImage.FileName,
 		},
 	})
@@ -166,22 +130,17 @@ func (service *merchantServiceImpl) UpdateMainImageById(ctx context.Context, req
 	errDelete := service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
 	helper.PanicIfError(errDelete)
 
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, file)
+	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
 	helper.PanicIfError(errUpload)
 
-	return web.MerchantUpdateImageRequest{
-		Id: res.Id.Hex(),
-		MainImage: &web.ImageUpdateRequest{
-			FileName: res.MainImage.FileName,
-		},
-	}
+	return request
 }
 
 func (service *merchantServiceImpl) Delete(ctx context.Context, merchantId string) {
 	merchant, err := service.MerchantRepository.FindById(ctx, merchantId)
 	helper.PanicIfError(err)
 
-	errDelete := service.MerchantRepository.DeleteById(ctx, merchant.Id.Hex())
+	errDelete := service.MerchantRepository.Delete(ctx, merchant.Id.Hex())
 	helper.PanicIfError(errDelete)
 
 	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)

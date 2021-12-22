@@ -12,8 +12,8 @@ import (
 type MerchantRepository interface {
 	Create(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
 	FindById(ctx context.Context, merchantId string) (domain.Merchant, error)
-	UpdateById(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
-	DeleteById(ctx context.Context, merchantId string) error
+	Update(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
+	Delete(ctx context.Context, merchantId string) error
 }
 
 type merchantRepositoryImpl struct {
@@ -45,7 +45,7 @@ func (repository *merchantRepositoryImpl) FindById(ctx context.Context, merchant
 	return merchant, nil
 }
 
-func (repository *merchantRepositoryImpl) UpdateById(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error) {
+func (repository *merchantRepositoryImpl) Update(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error) {
 	_, err := repository.Collection.UpdateByID(ctx, merchant.Id, bson.D{{"$set", merchant}})
 	if err != nil {
 		return merchant, err
@@ -53,7 +53,7 @@ func (repository *merchantRepositoryImpl) UpdateById(ctx context.Context, mercha
 	return merchant, nil
 }
 
-func (repository *merchantRepositoryImpl) DeleteById(ctx context.Context, merchantId string) error {
+func (repository *merchantRepositoryImpl) Delete(ctx context.Context, merchantId string) error {
 	objectId := helper.ObjectIDFromHex(merchantId)
 	_, err := repository.Collection.DeleteOne(ctx, bson.D{{"_id", objectId}})
 	if err != nil {
