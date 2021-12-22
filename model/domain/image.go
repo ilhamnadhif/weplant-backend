@@ -1,7 +1,8 @@
 package domain
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Image struct {
-	InitModel
-	FileName string `bson:"file_name,omitempty"`
-	URL      string `bson:"url,omitempty"`
+	Id       primitive.ObjectID `bson:"_id,omitempty"`
+	FileName string             `bson:"file_name,omitempty"`
 }

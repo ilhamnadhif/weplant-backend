@@ -23,7 +23,7 @@ type MerchantUpdateRequest struct {
 	Id      string                `json:"id"`
 	Name    string                `json:"name,omitempty"`
 	Phone   string                `json:"phone,omitempty"`
-	Address *AddressCreateRequest `json:"address,omitempty"`
+	Address *AddressUpdateRequest `json:"address,omitempty"`
 }
 
 type MerchantUpdateImageRequest struct {

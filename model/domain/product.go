@@ -1,13 +1,16 @@
 package domain
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type ProductCategory struct {
 	CategoryId string `bson:"category_id,omitempty"`
 }
 
 type Product struct {
-	InitModel
+	Id          primitive.ObjectID `bson:"_id,omitempty"`
+	CreatedAt   int                `bson:"created_at,omitempty"`
+	UpdatedAt   int                `bson:"updated_at,omitempty"`
 	MerchantId  string             `bson:"merchant_id,omitempty"`
-	IsActive    *bool              `bson:"is_active,omitempty"`
 	Name        string             `bson:"name,omitempty"`
 	Description string             `bson:"description,omitempty"`
 	Price       int                `bson:"price,omitempty"`
