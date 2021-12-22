@@ -82,12 +82,12 @@ func (controller *categoryControllerImpl) Update(c *gin.Context) {
 	id := c.Param("categoryId")
 
 	var categoryUpdateRequest web.CategoryUpdateRequest
-	categoryUpdateRequest.Id = id
-
 	errBind := c.ShouldBindJSON(&categoryUpdateRequest)
 	if errBind != nil {
 		panic(helper.IfValidationError(errBind))
 	}
+	categoryUpdateRequest.Id = id
+
 	res := controller.CategoryService.Update(ctx, categoryUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,

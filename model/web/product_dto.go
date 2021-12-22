@@ -50,7 +50,7 @@ type ProductUpdateRequest struct {
 	Description string                          `json:"description"`
 	Price       int                             `json:"price"`
 	Quantity    int                             `json:"quantity"`
-	Categories  *[]ProductCategoryUpdateRequest `json:"categories"`
+	Categories  []*ProductCategoryUpdateRequest `json:"categories"`
 }
 
 //type ProductSetIsActiveRequest struct {

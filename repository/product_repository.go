@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"weplant-backend/helper"
 	"weplant-backend/model/domain"
 )
@@ -14,8 +16,10 @@ type ProductRepository interface {
 	FindById(ctx context.Context, productId string) (domain.Product, error)
 	FindAll(ctx context.Context) ([]domain.Product, error)
 	Update(ctx context.Context, product domain.Product) (domain.Product, error)
-	Delete(ctx context.Context, productId string) error
 	PushImageIntoImages(ctx context.Context, productId string, image domain.Image) (domain.Image, error)
+	PullImageFromImages(ctx context.Context, productId string, imageId string) (domain.Image, error)
+	Delete(ctx context.Context, productId string) error
+
 	FindByCategoryId(ctx context.Context, categoryId string) ([]domain.Product, error)
 	PullCategoryIdFromProduct(ctx context.Context, categoryId string) error
 }
@@ -69,15 +73,6 @@ func (repository *productRepositoryImpl) Update(ctx context.Context, product dom
 	return product, nil
 }
 
-func (repository *productRepositoryImpl) Delete(ctx context.Context, productId string) error {
-	objectId := helper.ObjectIDFromHex(productId)
-	_, err := repository.Collection.DeleteOne(ctx, bson.D{{"_id", objectId}})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (repository *productRepositoryImpl) PushImageIntoImages(ctx context.Context, productId string, image domain.Image) (domain.Image, error) {
 	objectId := helper.ObjectIDFromHex(productId)
 	_, err := repository.Collection.UpdateByID(ctx, objectId, bson.D{
@@ -92,6 +87,63 @@ func (repository *productRepositoryImpl) PushImageIntoImages(ctx context.Context
 	}
 	return image, nil
 }
+
+func (repository *productRepositoryImpl) PullImageFromImages(ctx context.Context, productId string, imageId string) (domain.Image, error) {
+	objectProductId := helper.ObjectIDFromHex(productId)
+	objectImageId := helper.ObjectIDFromHex(imageId)
+
+	var product domain.Product
+	var image domain.Image
+
+	err := repository.Collection.FindOneAndUpdate(ctx, bson.D{{"_id", objectProductId}}, bson.D{
+		{
+			"$pull", bson.D{
+				{
+					"images", bson.D{
+						{"_id", objectImageId},
+					},
+				},
+			},
+		},
+	}, options.FindOneAndUpdate().SetProjection(bson.D{
+		{
+			"images", bson.D{
+				{
+					"$elemMatch", bson.D{
+						{"_id", objectImageId},
+					},
+				},
+			},
+		},
+	})).Decode(&product)
+	if err != nil {
+		return image, err
+	}
+
+	if product.Images != nil {
+		for _, img := range product.Images {
+			if img.Id == objectImageId {
+				image = *img
+			} else {
+				return image, errors.New("Image Not Found")
+			}
+		}
+	} else {
+		return image, errors.New("Image Not Found")
+	}
+	return image, nil
+}
+
+func (repository *productRepositoryImpl) Delete(ctx context.Context, productId string) error {
+	objectId := helper.ObjectIDFromHex(productId)
+	_, err := repository.Collection.DeleteOne(ctx, bson.D{{"_id", objectId}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//
 func (repository *productRepositoryImpl) FindByCategoryId(ctx context.Context, categoryId string) ([]domain.Product, error) {
 	var products []domain.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{

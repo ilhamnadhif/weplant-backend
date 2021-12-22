@@ -15,8 +15,9 @@ type ProductController interface {
 	FindById(c *gin.Context)
 	FindAll(c *gin.Context)
 	Update(c *gin.Context)
-	Delete(c *gin.Context)
 	PushImageIntoImages(c *gin.Context)
+	PullImageFromImages(c *gin.Context)
+	Delete(c *gin.Context)
 }
 
 type productControllerImpl struct {
@@ -104,20 +105,37 @@ func (controller *productControllerImpl) FindAll(c *gin.Context) {
 }
 
 func (controller *productControllerImpl) Update(c *gin.Context) {
-	panic("implement me")
-}
-
-func (controller *productControllerImpl) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("productId")
 
-	controller.ProductService.Delete(ctx, id)
+	var productUpdateRequest web.ProductUpdateRequest
+	errBind := c.ShouldBindJSON(&productUpdateRequest)
+	if errBind != nil {
+		panic(helper.IfValidationError(errBind))
+	}
+	productUpdateRequest.Id = id
+
+	res := controller.ProductService.Update(ctx, productUpdateRequest)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
+func (controller *productControllerImpl) PullImageFromImages(c *gin.Context) {
+	ctx := c.Request.Context()
+	productId := c.Param("productId")
+	imageId := c.Param("imageId")
+
+	controller.ProductService.PullImageFromImages(ctx, productId, imageId)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",
 		Data:   nil,
 	})
 }
+
 func (controller *productControllerImpl) PushImageIntoImages(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("productId")
@@ -136,6 +154,18 @@ func (controller *productControllerImpl) PushImageIntoImages(c *gin.Context) {
 		}, src)
 	}
 
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   nil,
+	})
+}
+
+func (controller *productControllerImpl) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("productId")
+
+	controller.ProductService.Delete(ctx, id)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

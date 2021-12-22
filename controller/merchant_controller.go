@@ -96,12 +96,11 @@ func (controller *merchantControllerImpl) Update(c *gin.Context) {
 	id := c.Param("merchantId")
 
 	var merchantUpdateRequest web.MerchantUpdateRequest
-	merchantUpdateRequest.Id = id
-
 	errBind := c.ShouldBindJSON(&merchantUpdateRequest)
 	if errBind != nil {
 		panic(helper.IfValidationError(errBind))
 	}
+	merchantUpdateRequest.Id = id
 	res := controller.MerchantService.Update(ctx, merchantUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
