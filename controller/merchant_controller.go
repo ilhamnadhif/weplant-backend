@@ -55,10 +55,12 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 	filename := helper.GetFileName(image.Filename)
 
 	res := controller.MerchantService.Create(ctx, web.MerchantCreateRequest{
-		Email:    email,
-		Password: password,
-		Name:     name,
-		Phone:    phone,
+		CreatedAt: helper.GetTimeNow(),
+		UpdatedAt: helper.GetTimeNow(),
+		Email:     email,
+		Password:  password,
+		Name:      name,
+		Phone:     phone,
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
 		},
@@ -97,10 +99,10 @@ func (controller *merchantControllerImpl) Update(c *gin.Context) {
 
 	var merchantUpdateRequest web.MerchantUpdateRequest
 	errBind := c.ShouldBindJSON(&merchantUpdateRequest)
-	if errBind != nil {
-		panic(helper.IfValidationError(errBind))
-	}
+	helper.PanicIfError(errBind)
 	merchantUpdateRequest.Id = id
+	merchantUpdateRequest.UpdatedAt = helper.GetTimeNow()
+
 	res := controller.MerchantService.Update(ctx, merchantUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
@@ -124,6 +126,7 @@ func (controller *merchantControllerImpl) UpdateMainImage(c *gin.Context) {
 
 	res := controller.MerchantService.UpdateMainImage(ctx, web.MerchantUpdateImageRequest{
 		Id: id,
+		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
 		},

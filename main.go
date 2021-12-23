@@ -52,21 +52,32 @@ func main() {
 		Options: options.Index().SetUnique(true),
 	})
 
+	customerCollection := database.Collection("customer")
+	customerCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+
 	// repository
 	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
 	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	categoryRepository := repository.NewCategoryRepository(categoryCollection)
 	productRepository := repository.NewProductRepository(productCollection)
+	customerRepository := repository.NewCustomerRepository(customerCollection)
 
 	// service
 	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository)
 	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
 	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository)
+	customerService := service.NewCustomerService(customerRepository)
+	cartService := service.NewCartService(customerRepository, productRepository)
 
 	// controller
 	merchantController := controller.NewMerchantController(merchantService)
 	categoryController := controller.NewCategoryController(categoryService)
 	productController := controller.NewProductController(productService)
+	customerController := controller.NewCustomerController(customerService)
+	cartController := controller.NewCartController(cartService)
 
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -101,9 +112,22 @@ func main() {
 	productRouter.GET("/:productId", productController.FindById)
 	productRouter.GET("/", productController.FindAll)
 	productRouter.PUT("/:productId", productController.Update)
+	productRouter.PATCH("/:productId/image", productController.UpdateMainImage)
 	productRouter.POST("/:productId/images", productController.PushImageIntoImages)
 	productRouter.DELETE("/:productId/images/:imageId", productController.PullImageFromImages)
 	productRouter.DELETE("/:productId", productController.Delete)
+
+	customerRouter := v1.Group("/customers")
+	customerRouter.POST("/", customerController.Create)
+	customerRouter.GET("/:customerId", customerController.FindById)
+	customerRouter.GET("/:customerId/cart", customerController.FindCartById)
+	customerRouter.PUT("/:customerId", customerController.Update)
+	customerRouter.DELETE("/:customerId", customerController.Delete)
+
+	cartRouter := v1.Group("/carts")
+	cartRouter.POST("/:customerId", cartController.PushProductToCart)
+	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
+	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {

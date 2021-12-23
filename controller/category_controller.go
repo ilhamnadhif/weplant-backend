@@ -42,7 +42,9 @@ func (controller *categoryControllerImpl) Create(c *gin.Context) {
 	filename := helper.GetFileName(image.Filename)
 
 	res := controller.CategoryService.Create(ctx, web.CategoryCreateRequest{
-		Name: name,
+		CreatedAt: helper.GetTimeNow(),
+		UpdatedAt: helper.GetTimeNow(),
+		Name:      name,
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
 		},
@@ -83,10 +85,9 @@ func (controller *categoryControllerImpl) Update(c *gin.Context) {
 
 	var categoryUpdateRequest web.CategoryUpdateRequest
 	errBind := c.ShouldBindJSON(&categoryUpdateRequest)
-	if errBind != nil {
-		panic(helper.IfValidationError(errBind))
-	}
+	helper.PanicIfError(errBind)
 	categoryUpdateRequest.Id = id
+	categoryUpdateRequest.UpdatedAt = helper.GetTimeNow()
 
 	res := controller.CategoryService.Update(ctx, categoryUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
@@ -111,6 +112,7 @@ func (controller *categoryControllerImpl) UpdateMainImage(c *gin.Context) {
 
 	res := controller.CategoryService.UpdateMainImage(ctx, web.CategoryUpdateImageRequest{
 		Id:        id,
+		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
 		},

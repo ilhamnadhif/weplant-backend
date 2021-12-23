@@ -14,6 +14,7 @@ type ProductService interface {
 	FindById(ctx context.Context, productId string) web.ProductResponse
 	FindAll(ctx context.Context) []web.ProductResponseAll
 	Update(ctx context.Context, request web.ProductUpdateRequest) web.ProductUpdateRequest
+	UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, file interface{}) web.ProductUpdateImageRequest
 	PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest
 	PullImageFromImages(ctx context.Context, productId string, imageId string)
 	Delete(ctx context.Context, productId string)
@@ -36,7 +37,6 @@ func NewProductService(productRepository repository.ProductRepository, cloudinar
 }
 
 func (service *productServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest, file interface{}) web.ProductCreateRequest {
-	timeNow := helper.GetTimeNow()
 
 	merchant, errMerchant := service.MerchantRepository.FindById(ctx, request.MerchantId)
 	helper.PanicIfError(errMerchant)
@@ -51,8 +51,8 @@ func (service *productServiceImpl) Create(ctx context.Context, request web.Produ
 	}
 
 	res, err := service.ProductRepository.Create(ctx, domain.Product{
-		CreatedAt:   timeNow,
-		UpdatedAt:   timeNow,
+		CreatedAt:   request.CreatedAt,
+		UpdatedAt:   request.UpdatedAt,
 		MerchantId:  merchant.Id.Hex(),
 		Name:        request.Name,
 		Description: request.Description,
@@ -170,7 +170,7 @@ func (service *productServiceImpl) Update(ctx context.Context, request web.Produ
 
 	_, errUpdate := service.ProductRepository.Update(ctx, domain.Product{
 		Id:          product.Id,
-		UpdatedAt:   helper.GetTimeNow(),
+		UpdatedAt:   request.UpdatedAt,
 		Name:        request.Name,
 		Description: request.Description,
 		Price:       request.Price,
@@ -178,6 +178,29 @@ func (service *productServiceImpl) Update(ctx context.Context, request web.Produ
 		Categories:  categoriesUpdateRequest,
 	})
 	helper.PanicIfError(errUpdate)
+	return request
+}
+
+func (service *productServiceImpl) UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, file interface{}) web.ProductUpdateImageRequest {
+	product, err := service.ProductRepository.FindById(ctx, request.Id)
+	helper.PanicIfError(err)
+
+	res, errUpdate := service.ProductRepository.Update(ctx, domain.Product{
+		Id:        product.Id,
+		UpdatedAt: request.UpdatedAt,
+		MainImage: &domain.Image{
+			Id:       primitive.NewObjectID(),
+			FileName: request.MainImage.FileName,
+		},
+	})
+	helper.PanicIfError(errUpdate)
+
+	errDelete := service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
+	helper.PanicIfError(errDelete)
+
+	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
+	helper.PanicIfError(errUpload)
+
 	return request
 }
 

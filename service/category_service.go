@@ -33,10 +33,9 @@ func NewCategoryService(categoryRepository repository.CategoryRepository, cloudi
 }
 
 func (service *categoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest, file interface{}) web.CategoryCreateRequest {
-	timeNow := helper.GetTimeNow()
 	_, err := service.CategoryRepository.Create(ctx, domain.Category{
-		CreatedAt: timeNow,
-		UpdatedAt: timeNow,
+		CreatedAt: request.CreatedAt,
+		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
 		MainImage: &domain.Image{
 			Id:       primitive.NewObjectID(),
@@ -125,7 +124,7 @@ func (service *categoryServiceImpl) Update(ctx context.Context, request web.Cate
 
 	_, errUpdate := service.CategoryRepository.Update(ctx, domain.Category{
 		Id:        category.Id,
-		UpdatedAt: helper.GetTimeNow(),
+		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
 	})
 	helper.PanicIfError(errUpdate)
@@ -133,13 +132,12 @@ func (service *categoryServiceImpl) Update(ctx context.Context, request web.Cate
 }
 
 func (service *categoryServiceImpl) UpdateMainImage(ctx context.Context, request web.CategoryUpdateImageRequest, file interface{}) web.CategoryUpdateImageRequest {
-	timeNow := helper.GetTimeNow()
 	category, err := service.CategoryRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
 	res, errUpdate := service.CategoryRepository.Update(ctx, domain.Category{
 		Id:        category.Id,
-		UpdatedAt: timeNow,
+		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
 			FileName: request.MainImage.FileName,
 		},
