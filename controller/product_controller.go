@@ -15,6 +15,7 @@ type ProductController interface {
 	FindById(c *gin.Context)
 	FindAll(c *gin.Context)
 	Update(c *gin.Context)
+	UpdateMainImage(c *gin.Context)
 	PushImageIntoImages(c *gin.Context)
 	PullImageFromImages(c *gin.Context)
 	Delete(c *gin.Context)
@@ -62,6 +63,8 @@ func (controller *productControllerImpl) Create(c *gin.Context) {
 	}
 
 	res := controller.ProductService.Create(ctx, web.ProductCreateRequest{
+		CreatedAt:   helper.GetTimeNow(),
+		UpdatedAt:   helper.GetTimeNow(),
 		MerchantId:  merchantId,
 		Name:        name,
 		Description: description,
@@ -110,12 +113,38 @@ func (controller *productControllerImpl) Update(c *gin.Context) {
 
 	var productUpdateRequest web.ProductUpdateRequest
 	errBind := c.ShouldBindJSON(&productUpdateRequest)
-	if errBind != nil {
-		panic(helper.IfValidationError(errBind))
-	}
+	helper.PanicIfError(errBind)
 	productUpdateRequest.Id = id
+	productUpdateRequest.UpdatedAt = helper.GetTimeNow()
 
 	res := controller.ProductService.Update(ctx, productUpdateRequest)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
+func (controller *productControllerImpl) UpdateMainImage(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("productId")
+
+	image, errorFormFile := c.FormFile("image")
+
+	src, err := image.Open()
+	helper.PanicIfError(err)
+	defer src.Close()
+
+	helper.PanicIfError(errorFormFile)
+	filename := helper.GetFileName(image.Filename)
+
+	res := controller.ProductService.UpdateMainImage(ctx, web.ProductUpdateImageRequest{
+		Id:        id,
+		UpdatedAt: helper.GetTimeNow(),
+		MainImage: &web.ImageUpdateRequest{
+			FileName: filename,
+		},
+	}, src)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

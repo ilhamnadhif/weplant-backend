@@ -31,6 +31,8 @@ type ProductCategoryCreateRequest struct {
 }
 
 type ProductCreateRequest struct {
+	CreatedAt   int                             `json:"created_at"`
+	UpdatedAt   int                             `json:"updated_at"`
 	MerchantId  string                          `json:"merchant_id"`
 	Name        string                          `json:"name"`
 	Description string                          `json:"description"`
@@ -46,6 +48,7 @@ type ProductCategoryUpdateRequest struct {
 
 type ProductUpdateRequest struct {
 	Id          string                          `json:"id"`
+	UpdatedAt   int                             `json:"updated_at"`
 	Name        string                          `json:"name"`
 	Description string                          `json:"description"`
 	Price       int                             `json:"price"`
@@ -53,7 +56,8 @@ type ProductUpdateRequest struct {
 	Categories  []*ProductCategoryUpdateRequest `json:"categories"`
 }
 
-//type ProductSetIsActiveRequest struct {
-//	Id       string
-//	IsActive bool `json:"is_active"`
-//}
+type ProductUpdateImageRequest struct {
+	Id        string              `json:"id"`
+	UpdatedAt int                 `json:"updated_at"`
+	MainImage *ImageUpdateRequest `json:"main_image,omitempty"`
+}

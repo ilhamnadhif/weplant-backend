@@ -10,5 +10,5 @@ type Customer struct {
 	Password  string             `bson:"password,omitempty"`
 	UserName  string             `bson:"user_name,omitempty"`
 	Phone     string             `bson:"phone,omitempty"`
-	Address   *Address           `bson:"address,omitempty"`
+	Cart      Cart               `bson:"cart"`
 }

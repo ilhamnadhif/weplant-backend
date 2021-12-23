@@ -30,17 +30,16 @@ func NewMerchantService(merchantRepository repository.MerchantRepository, cloudi
 }
 
 func (service *merchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest {
-	timeNow := helper.GetTimeNow()
 	_, err := service.MerchantRepository.Create(ctx, domain.Merchant{
-		CreatedAt: timeNow,
-		UpdatedAt: timeNow,
+		CreatedAt: request.CreatedAt,
+		UpdatedAt: request.UpdatedAt,
 		Email:     request.Email,
 		Password:  helper.HashPassword(request.Password),
 		Name:      request.Name,
 		Phone:     request.Phone,
 		MainImage: &domain.Image{
-			Id:        primitive.NewObjectID(),
-			FileName:  request.MainImage.FileName,
+			Id:       primitive.NewObjectID(),
+			FileName: request.MainImage.FileName,
 		},
 		Address: &domain.Address{
 			Address:    request.Address.Address,
@@ -71,12 +70,13 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 		Id:        res.Id.Hex(),
 		CreatedAt: res.CreatedAt,
 		UpdatedAt: res.UpdatedAt,
+		Email:     res.Email,
 		Name:      res.Name,
 		Phone:     res.Phone,
 		MainImage: &web.ImageResponse{
-			Id:        res.MainImage.Id.Hex(),
-			FileName:  res.MainImage.FileName,
-			URL:       imgUrl,
+			Id:       res.MainImage.Id.Hex(),
+			FileName: res.MainImage.FileName,
+			URL:      imgUrl,
 		},
 		Address: &web.AddressResponse{
 			Address:    res.Address.Address,
@@ -96,7 +96,7 @@ func (service *merchantServiceImpl) Update(ctx context.Context, request web.Merc
 
 	_, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
-		UpdatedAt: helper.GetTimeNow(),
+		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
 		Phone:     request.Phone,
 		Address: &domain.Address{
@@ -114,15 +114,14 @@ func (service *merchantServiceImpl) Update(ctx context.Context, request web.Merc
 }
 
 func (service *merchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest {
-	timeNow := helper.GetTimeNow()
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
 	res, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
-		UpdatedAt: timeNow,
+		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
-			FileName:  request.MainImage.FileName,
+			FileName: request.MainImage.FileName,
 		},
 	})
 	helper.PanicIfError(errUpdate)
