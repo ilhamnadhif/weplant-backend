@@ -39,8 +39,8 @@ func (controller *productControllerImpl) Create(c *gin.Context) {
 	description := c.PostForm("description")
 	price, errPrice := strconv.Atoi(c.PostForm("price"))
 	helper.PanicIfError(errPrice)
-	quantity, errQuantity := strconv.Atoi(c.PostForm("quantity"))
-	helper.PanicIfError(errQuantity)
+	stock, errStock:= strconv.Atoi(c.PostForm("stock"))
+	helper.PanicIfError(errStock)
 	categories := c.PostFormArray("categories")
 
 	image, errorFormFile := c.FormFile("image")
@@ -69,7 +69,7 @@ func (controller *productControllerImpl) Create(c *gin.Context) {
 		Name:        name,
 		Description: description,
 		Price:       price,
-		Quantity:    quantity,
+		Stock: stock,
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
 		},

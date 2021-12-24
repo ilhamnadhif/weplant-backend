@@ -14,7 +14,7 @@ type Product struct {
 	Name        string             `bson:"name,omitempty"`
 	Description string             `bson:"description,omitempty"`
 	Price       int                `bson:"price,omitempty"`
-	Quantity    int                `bson:"quantity,omitempty"`
+	Stock       int                `bson:"stock,omitempty"`
 	MainImage   *Image             `bson:"main_image,omitempty"`
 	Images      []*Image           `bson:"images,omitempty"`
 	Categories  []*ProductCategory `bson:"categories,omitempty"`

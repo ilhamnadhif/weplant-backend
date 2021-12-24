@@ -25,14 +25,16 @@ type productServiceImpl struct {
 	CloudinaryRepository repository.CloudinaryRepository
 	CategoryRepository   repository.CategoryRepository
 	MerchantRepository   repository.MerchantRepository
+	CustomerRepository   repository.CustomerRepository
 }
 
-func NewProductService(productRepository repository.ProductRepository, cloudinaryRepository repository.CloudinaryRepository, categoryRepository repository.CategoryRepository, merchantRepository repository.MerchantRepository) ProductService {
+func NewProductService(productRepository repository.ProductRepository, cloudinaryRepository repository.CloudinaryRepository, categoryRepository repository.CategoryRepository, merchantRepository repository.MerchantRepository, customerRepository repository.CustomerRepository) ProductService {
 	return &productServiceImpl{
 		ProductRepository:    productRepository,
 		CloudinaryRepository: cloudinaryRepository,
 		CategoryRepository:   categoryRepository,
 		MerchantRepository:   merchantRepository,
+		CustomerRepository:   customerRepository,
 	}
 }
 
@@ -57,7 +59,7 @@ func (service *productServiceImpl) Create(ctx context.Context, request web.Produ
 		Name:        request.Name,
 		Description: request.Description,
 		Price:       request.Price,
-		Quantity:    request.Quantity,
+		Stock:       request.Stock,
 		MainImage: &domain.Image{
 			Id:       primitive.NewObjectID(),
 			FileName: request.MainImage.FileName,
@@ -116,7 +118,7 @@ func (service *productServiceImpl) FindById(ctx context.Context, productId strin
 		Name:        res.Name,
 		Description: res.Description,
 		Price:       res.Price,
-		Quantity:    res.Quantity,
+		Stock:       res.Stock,
 		MainImage: &web.ImageResponse{
 			Id:       res.MainImage.Id.Hex(),
 			FileName: res.MainImage.FileName,
@@ -139,11 +141,9 @@ func (service *productServiceImpl) FindAll(ctx context.Context) []web.ProductRes
 			Id:          product.Id.Hex(),
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
-			MerchantId:  product.MerchantId,
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
-			Quantity:    product.Quantity,
 			MainImage: &web.ImageResponse{
 				Id:       product.MainImage.Id.Hex(),
 				FileName: product.MainImage.FileName,
@@ -174,7 +174,7 @@ func (service *productServiceImpl) Update(ctx context.Context, request web.Produ
 		Name:        request.Name,
 		Description: request.Description,
 		Price:       request.Price,
-		Quantity:    request.Quantity,
+		Stock:       request.Stock,
 		Categories:  categoriesUpdateRequest,
 	})
 	helper.PanicIfError(errUpdate)
@@ -189,7 +189,7 @@ func (service *productServiceImpl) UpdateMainImage(ctx context.Context, request 
 		Id:        product.Id,
 		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
-			Id:       primitive.NewObjectID(),
+			Id:       product.MainImage.Id,
 			FileName: request.MainImage.FileName,
 		},
 	})
@@ -236,6 +236,9 @@ func (service *productServiceImpl) Delete(ctx context.Context, productId string)
 
 	errDelete := service.ProductRepository.Delete(ctx, product.Id.Hex())
 	helper.PanicIfError(errDelete)
+
+	errPull := service.CustomerRepository.PullAllProductFromCart(ctx, product.Id.Hex())
+	helper.PanicIfError(errPull)
 
 	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
 	helper.PanicIfError(errDeleteImg)

@@ -3,14 +3,15 @@ package config
 import (
 	"github.com/cloudinary/cloudinary-go"
 	"os"
-	"weplant-backend/helper"
 )
 
 func GetCloud() *cloudinary.Cloudinary {
 
 	cloudUrl := os.Getenv("CLOUDINARY_URL")
-	cld, errorCloud := cloudinary.NewFromURL(cloudUrl)
+	cld, err := cloudinary.NewFromURL(cloudUrl)
 
-	helper.PanicIfError(errorCloud)
+	if err != nil {
+		panic(err)
+	}
 	return cld
 }

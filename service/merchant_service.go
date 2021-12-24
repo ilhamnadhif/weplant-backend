@@ -30,6 +30,7 @@ func NewMerchantService(merchantRepository repository.MerchantRepository, cloudi
 }
 
 func (service *merchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest {
+
 	_, err := service.MerchantRepository.Create(ctx, domain.Merchant{
 		CreatedAt: request.CreatedAt,
 		UpdatedAt: request.UpdatedAt,
@@ -53,18 +54,19 @@ func (service *merchantServiceImpl) Create(ctx context.Context, request web.Merc
 	})
 	helper.PanicIfError(err)
 
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, file)
-	helper.PanicIfError(errUpload)
+	err = service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, file)
+	helper.PanicIfError(err)
 
 	return request
 }
 
 func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId string) web.MerchantResponse {
+
 	res, err := service.MerchantRepository.FindById(ctx, merchantId)
 	helper.PanicIfError(err)
 
-	imgUrl, errImg := service.CloudinaryRepository.GetImage(ctx, res.MainImage.FileName)
-	helper.PanicIfError(errImg)
+	imgUrl, err := service.CloudinaryRepository.GetImage(ctx, res.MainImage.FileName)
+	helper.PanicIfError(err)
 
 	return web.MerchantResponse{
 		Id:        res.Id.Hex(),
@@ -94,7 +96,7 @@ func (service *merchantServiceImpl) Update(ctx context.Context, request web.Merc
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	_, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
+	_, err = service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
@@ -109,7 +111,7 @@ func (service *merchantServiceImpl) Update(ctx context.Context, request web.Merc
 			Longitude:  request.Address.Longitude,
 		},
 	})
-	helper.PanicIfError(errUpdate)
+	helper.PanicIfError(err)
 	return request
 }
 
@@ -117,20 +119,21 @@ func (service *merchantServiceImpl) UpdateMainImage(ctx context.Context, request
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	res, errUpdate := service.MerchantRepository.Update(ctx, domain.Merchant{
+	res, err := service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
+			Id:       merchant.MainImage.Id,
 			FileName: request.MainImage.FileName,
 		},
 	})
-	helper.PanicIfError(errUpdate)
+	helper.PanicIfError(err)
 
-	errDelete := service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
-	helper.PanicIfError(errDelete)
+	err = service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
+	helper.PanicIfError(err)
 
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
-	helper.PanicIfError(errUpload)
+	err = service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
+	helper.PanicIfError(err)
 
 	return request
 }

@@ -8,6 +8,5 @@ type CartProduct struct {
 }
 
 type Cart struct {
-	SubTotal int            `bson:"sub_total"`
 	Products []*CartProduct `bson:"products,omitempty"`
 }

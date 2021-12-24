@@ -68,8 +68,8 @@ func main() {
 	// service
 	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository)
 	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
-	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository)
-	customerService := service.NewCustomerService(customerRepository)
+	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository, customerRepository)
+	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
 
 	// controller

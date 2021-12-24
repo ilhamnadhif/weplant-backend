@@ -38,7 +38,7 @@ func (service *cartServiceImpl) PushProductToCart(ctx context.Context, request w
 		UpdatedAt: request.UpdatedAt,
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
-	}, product.Price)
+	})
 	helper.PanicIfError(errPush)
 	return request
 }
@@ -54,7 +54,7 @@ func (service *cartServiceImpl) UpdateProductQuantity(ctx context.Context, reque
 		UpdatedAt: request.UpdatedAt,
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
-	}, request.Quantity*product.Price)
+	})
 	helper.PanicIfError(errUpdate)
 
 	return request
@@ -69,7 +69,7 @@ func (service *cartServiceImpl) PullProductFromCart(ctx context.Context, custome
 
 	for _, prdct := range customer.Cart.Products {
 		if prdct.ProductId == product.Id.Hex() {
-			service.CustomerRepository.PullProductFromCart(ctx, customer.Id.Hex(), product.Id.Hex(), -prdct.Quantity*product.Price)
+			service.CustomerRepository.PullProductFromCart(ctx, customer.Id.Hex(), product.Id.Hex())
 		}
 	}
 }
