@@ -33,5 +33,5 @@ type CategoryUpdateRequest struct {
 type CategoryUpdateImageRequest struct {
 	Id        string              `json:"id"`
 	UpdatedAt int                 `json:"updated_at"`
-	MainImage *ImageUpdateRequest `json:"main_image,omitempty"`
+	MainImage *ImageUpdateRequest `json:"main_image"`
 }

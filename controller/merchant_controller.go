@@ -38,12 +38,12 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 	city := c.PostForm("city")
 	province := c.PostForm("province")
 	country := c.PostForm("country")
-	postalCode, errPosCod := strconv.Atoi(c.PostForm("postal_code"))
-	helper.PanicIfError(errPosCod)
-	latitude, errlat := strconv.ParseFloat(c.PostForm("latitude"), 64)
-	helper.PanicIfError(errlat)
-	longitude, errLong := strconv.ParseFloat(c.PostForm("longitude"), 64)
-	helper.PanicIfError(errLong)
+	postalCode, err := strconv.Atoi(c.PostForm("postal_code"))
+	helper.PanicIfError(err)
+	latitude, err := strconv.ParseFloat(c.PostForm("latitude"), 64)
+	helper.PanicIfError(err)
+	longitude, err := strconv.ParseFloat(c.PostForm("longitude"), 64)
+	helper.PanicIfError(err)
 
 	image, errorFormFile := c.FormFile("image")
 

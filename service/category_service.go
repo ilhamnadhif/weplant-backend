@@ -65,11 +65,9 @@ func (service *categoryServiceImpl) FindById(ctx context.Context, categoryId str
 			Id:          product.Id.Hex(),
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
-			MerchantId:  product.MerchantId,
 			Name:        product.Name,
 			Description: product.Description,
 			Price:       product.Price,
-			Quantity:    product.Quantity,
 			MainImage: &web.ImageResponse{
 				Id:       product.MainImage.Id.Hex(),
 				FileName: product.MainImage.FileName,
@@ -139,6 +137,7 @@ func (service *categoryServiceImpl) UpdateMainImage(ctx context.Context, request
 		Id:        category.Id,
 		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
+			Id: category.MainImage.Id,
 			FileName: request.MainImage.FileName,
 		},
 	})

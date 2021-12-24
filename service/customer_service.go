@@ -17,12 +17,16 @@ type CustomerService interface {
 }
 
 type customerServiceImpl struct {
-	CustomerRepository repository.CustomerRepository
+	CustomerRepository   repository.CustomerRepository
+	ProductRepository    repository.ProductRepository
+	CloudinaryRepository repository.CloudinaryRepository
 }
 
-func NewCustomerService(customerRepository repository.CustomerRepository) CustomerService {
+func NewCustomerService(customerRepository repository.CustomerRepository, productRepository repository.ProductRepository, cloudinaryRepository repository.CloudinaryRepository) CustomerService {
 	return &customerServiceImpl{
-		CustomerRepository: customerRepository,
+		CustomerRepository:   customerRepository,
+		ProductRepository:    productRepository,
+		CloudinaryRepository: cloudinaryRepository,
 	}
 }
 
@@ -57,20 +61,35 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 	customer, err := service.CustomerRepository.FindById(ctx, customerId)
 	helper.PanicIfError(err)
 
+	var totalPrice int
+
 	var products []*web.CartProductResponse
 	for _, product := range customer.Cart.Products {
+		findProduct, errPrdct := service.ProductRepository.FindById(ctx, product.ProductId)
+		helper.PanicIfError(errPrdct)
+		url, errUrl := service.CloudinaryRepository.GetImage(ctx, findProduct.MainImage.FileName)
+		helper.PanicIfError(errUrl)
 		products = append(products, &web.CartProductResponse{
-			CreatedAt: product.CreatedAt,
-			UpdatedAt: product.UpdatedAt,
-			ProductId: product.ProductId,
-			Quantity:  product.Quantity,
+			CreatedAt:   product.CreatedAt,
+			UpdatedAt:   product.UpdatedAt,
+			ProductId:   findProduct.Id.Hex(),
+			Name:        findProduct.Name,
+			Description: findProduct.Description,
+			Price:       findProduct.Price,
+			MainImage: &web.ImageResponse{
+				Id:       findProduct.MainImage.Id.Hex(),
+				FileName: findProduct.MainImage.FileName,
+				URL:      url,
+			},
+			Quantity: product.Quantity,
 		})
+		totalPrice += product.Quantity * findProduct.Price
 	}
 
 	return web.CartResponse{
 		CustomerId: customer.Id.Hex(),
-		SubTotal:   customer.Cart.SubTotal,
-		Products:   products,
+		Total: totalPrice,
+		Products: products,
 	}
 }
 

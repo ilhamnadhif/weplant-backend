@@ -8,7 +8,7 @@ type ProductResponse struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
 	Price       int                 `json:"price"`
-	Quantity    int                 `json:"quantity"`
+	Stock       int                 `json:"stock"`
 	MainImage   *ImageResponse      `json:"main_image"`
 	Images      []*ImageResponse    `json:"images"`
 	Categories  []*CategoryResponse `json:"categories"`
@@ -18,11 +18,9 @@ type ProductResponseAll struct {
 	Id          string         `json:"id"`
 	CreatedAt   int            `json:"created_at"`
 	UpdatedAt   int            `json:"updated_at"`
-	MerchantId  string         `json:"merchant_id"`
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	Price       int            `json:"price"`
-	Quantity    int            `json:"quantity"`
 	MainImage   *ImageResponse `json:"main_image"`
 }
 
@@ -37,7 +35,7 @@ type ProductCreateRequest struct {
 	Name        string                          `json:"name"`
 	Description string                          `json:"description"`
 	Price       int                             `json:"price"`
-	Quantity    int                             `json:"quantity"`
+	Stock       int                             `json:"stock"`
 	MainImage   *ImageCreateRequest             `json:"main_image"`
 	Categories  []*ProductCategoryCreateRequest `json:"categories"`
 }
@@ -52,12 +50,12 @@ type ProductUpdateRequest struct {
 	Name        string                          `json:"name"`
 	Description string                          `json:"description"`
 	Price       int                             `json:"price"`
-	Quantity    int                             `json:"quantity"`
+	Stock       int                             `json:"stock"`
 	Categories  []*ProductCategoryUpdateRequest `json:"categories"`
 }
 
 type ProductUpdateImageRequest struct {
 	Id        string              `json:"id"`
 	UpdatedAt int                 `json:"updated_at"`
-	MainImage *ImageUpdateRequest `json:"main_image,omitempty"`
+	MainImage *ImageUpdateRequest `json:"main_image"`
 }

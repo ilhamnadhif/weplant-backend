@@ -33,6 +33,9 @@ func (controller *customerControllerImpl) Create(c *gin.Context) {
 	errBind := c.ShouldBindJSON(&customerCreateRequest)
 	helper.PanicIfError(errBind)
 
+	customerCreateRequest.CreatedAt = helper.GetTimeNow()
+	customerCreateRequest.UpdatedAt = helper.GetTimeNow()
+
 	res := controller.CustomerService.Create(ctx, customerCreateRequest)
 	c.JSON(http.StatusCreated, web.WebResponse{
 		Code:   http.StatusCreated,
@@ -73,6 +76,7 @@ func (controller *customerControllerImpl) Update(c *gin.Context) {
 	errBind := c.ShouldBindJSON(&customerUpdateRequest)
 	helper.PanicIfError(errBind)
 	customerUpdateRequest.Id = id
+	customerUpdateRequest.UpdatedAt = helper.GetTimeNow()
 
 	res := controller.CustomerService.Update(ctx, customerUpdateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
