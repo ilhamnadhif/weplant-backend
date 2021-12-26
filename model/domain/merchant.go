@@ -10,6 +10,7 @@ type Merchant struct {
 	Password  string             `bson:"password,omitempty"`
 	Name      string             `bson:"name,omitempty"`
 	Phone     string             `bson:"phone,omitempty"`
+	Balance   int                `bson:"balance,omitempty"`
 	MainImage *Image             `bson:"main_image,omitempty"`
 	Address   *Address           `bson:"address,omitempty"`
 }

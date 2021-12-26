@@ -16,10 +16,12 @@ type CustomerRepository interface {
 	Update(ctx context.Context, customer domain.Customer) (domain.Customer, error)
 	Delete(ctx context.Context, customerId string) error
 
-	PushProductTCart(ctx context.Context, customerId string, product domain.CartProduct) error
+	PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error
 	UpdateProductQuantity(ctx context.Context, customerId string, product domain.CartProduct) error
 	PullProductFromCart(ctx context.Context, customerId string, productId string) error
-	PullAllProductFromCart(ctx context.Context, productId string) error
+	PullProductFromAllCart(ctx context.Context, productId string) error
+
+	CheckoutFromCart(ctx context.Context, customerId string, product domain.OrderProduct) error
 }
 
 type customerRepositoryImpl struct {
@@ -69,7 +71,7 @@ func (repository *customerRepositoryImpl) Delete(ctx context.Context, customerId
 }
 
 //
-func (repository *customerRepositoryImpl) PushProductTCart(ctx context.Context, customerId string, product domain.CartProduct) error {
+func (repository *customerRepositoryImpl) PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{
@@ -134,7 +136,7 @@ func (repository *customerRepositoryImpl) PullProductFromCart(ctx context.Contex
 	return nil
 }
 
-func (repository *customerRepositoryImpl) PullAllProductFromCart(ctx context.Context, productId string) error {
+func (repository *customerRepositoryImpl) PullProductFromAllCart(ctx context.Context, productId string) error {
 	_, err := repository.Collection.UpdateMany(ctx, bson.D{}, bson.D{
 		{
 			"$pull", bson.D{{
@@ -143,6 +145,23 @@ func (repository *customerRepositoryImpl) PullAllProductFromCart(ctx context.Con
 				},
 			}},
 		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repository *customerRepositoryImpl) CheckoutFromCart(ctx context.Context, customerId string, product domain.OrderProduct) error {
+	objectId := helper.ObjectIDFromHex(customerId)
+	_, err := repository.Collection.UpdateOne(ctx, bson.D{
+		{"$and", bson.A{
+			bson.D{{"_id", objectId}},
+		}},
+	}, bson.D{
+		{"$push", bson.D{
+			{"order.products", product},
+		}},
 	})
 	if err != nil {
 		return err

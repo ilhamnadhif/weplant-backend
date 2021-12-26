@@ -237,7 +237,7 @@ func (service *productServiceImpl) Delete(ctx context.Context, productId string)
 	errDelete := service.ProductRepository.Delete(ctx, product.Id.Hex())
 	helper.PanicIfError(errDelete)
 
-	errPull := service.CustomerRepository.PullAllProductFromCart(ctx, product.Id.Hex())
+	errPull := service.CustomerRepository.PullProductFromAllCart(ctx, product.Id.Hex())
 	helper.PanicIfError(errPull)
 
 	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
