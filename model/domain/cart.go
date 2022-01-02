@@ -7,6 +7,3 @@ type CartProduct struct {
 	Quantity  int    `bson:"quantity,omitempty"`
 }
 
-type Cart struct {
-	Products []*CartProduct `bson:"products,omitempty"`
-}

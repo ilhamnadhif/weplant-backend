@@ -12,6 +12,7 @@ type CustomerService interface {
 	Create(ctx context.Context, request web.CustomerCreateRequest) web.CustomerCreateRequest
 	FindById(ctx context.Context, customerId string) web.CustomerResponse
 	FindCartById(ctx context.Context, customerId string) web.CartResponse
+	FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse
 	Update(ctx context.Context, request web.CustomerUpdateRequest) web.CustomerUpdateRequest
 	Delete(ctx context.Context, customerId string)
 }
@@ -64,11 +65,11 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 	var totalPrice int
 
 	var products []*web.CartProductResponse
-	for _, product := range customer.Cart.Products {
-		findProduct, errPrdct := service.ProductRepository.FindById(ctx, product.ProductId)
-		helper.PanicIfError(errPrdct)
-		url, errUrl := service.CloudinaryRepository.GetImage(ctx, findProduct.MainImage.FileName)
-		helper.PanicIfError(errUrl)
+	for _, product := range customer.Carts {
+		findProduct, err := service.ProductRepository.FindById(ctx, product.ProductId)
+		helper.PanicIfError(err)
+		url, err := service.CloudinaryRepository.GetImage(ctx, findProduct.MainImage.FileName)
+		helper.PanicIfError(err)
 		products = append(products, &web.CartProductResponse{
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
@@ -88,8 +89,58 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 
 	return web.CartResponse{
 		CustomerId: customer.Id.Hex(),
-		Total: totalPrice,
-		Products: products,
+		Total:      totalPrice,
+		Products:   products,
+	}
+}
+
+func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse {
+	customer, err := service.CustomerRepository.FindById(ctx, customerId)
+	helper.PanicIfError(err)
+
+	var orders []*web.OrderResponse
+	for _, order := range customer.Orders {
+
+		var productsReponse []*web.OrderProductResponse
+		for _, v := range order.Products {
+			product, err := service.ProductRepository.FindById(ctx, v.ProductId)
+			helper.PanicIfError(err)
+			url, err := service.CloudinaryRepository.GetImage(ctx, product.MainImage.FileName)
+			helper.PanicIfError(err)
+			productsReponse = append(productsReponse, &web.OrderProductResponse{
+				ProductId:   product.Id.Hex(),
+				Name:        product.Name,
+				Description: product.Description,
+				Price:       v.Price,
+				MainImage: &web.ImageResponse{
+					Id:       product.MainImage.Id.Hex(),
+					FileName: product.MainImage.FileName,
+					URL:      url,
+				},
+				Quantity: v.Quantity,
+			})
+		}
+
+		orders = append(orders, &web.OrderResponse{
+			Id:        order.Id.Hex(),
+			CreatedAt: order.CreatedAt,
+			UpdatedAt: order.UpdatedAt,
+			Products:  productsReponse,
+			Address: &web.AddressResponse{
+				Address:    order.Address.Address,
+				City:       order.Address.City,
+				Province:   order.Address.Province,
+				Country:    order.Address.Country,
+				PostalCode: order.Address.PostalCode,
+				Latitude:   order.Address.Latitude,
+				Longitude:  order.Address.Longitude,
+			},
+		})
+	}
+
+	return web.CustomerOrdersResponse{
+		CustomerId: customer.Id.Hex(),
+		Orders:     orders,
 	}
 }
 

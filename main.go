@@ -124,6 +124,7 @@ func main() {
 	customerRouter.POST("/", customerController.Create)
 	customerRouter.GET("/:customerId", customerController.FindById)
 	customerRouter.GET("/:customerId/cart", customerController.FindCartById)
+	customerRouter.GET("/:customerId/order", customerController.FindOrderById)
 	customerRouter.PUT("/:customerId", customerController.Update)
 	customerRouter.DELETE("/:customerId", customerController.Delete)
 
@@ -134,6 +135,7 @@ func main() {
 
 	orderRouter := v1.Group("/orders")
 	orderRouter.POST("/:customerId", orderController.CheckoutFromCart)
+	orderRouter.POST("/callback", orderController.CallbackTransaction)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {

@@ -38,8 +38,7 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 	city := c.PostForm("city")
 	province := c.PostForm("province")
 	country := c.PostForm("country")
-	postalCode, err := strconv.Atoi(c.PostForm("postal_code"))
-	helper.PanicIfError(err)
+	postalCode := c.PostForm("postal_code")
 	latitude, err := strconv.ParseFloat(c.PostForm("latitude"), 64)
 	helper.PanicIfError(err)
 	longitude, err := strconv.ParseFloat(c.PostForm("longitude"), 64)
@@ -125,7 +124,7 @@ func (controller *merchantControllerImpl) UpdateMainImage(c *gin.Context) {
 	filename := helper.GetFileName(image.Filename)
 
 	res := controller.MerchantService.UpdateMainImage(ctx, web.MerchantUpdateImageRequest{
-		Id: id,
+		Id:        id,
 		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,

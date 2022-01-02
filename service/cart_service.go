@@ -67,7 +67,7 @@ func (service *cartServiceImpl) PullProductFromCart(ctx context.Context, custome
 	product, errProduct := service.ProductRepository.FindById(ctx, productId)
 	helper.PanicIfError(errProduct)
 
-	for _, prdct := range customer.Cart.Products {
+	for _, prdct := range customer.Carts {
 		if prdct.ProductId == product.Id.Hex() {
 			service.CustomerRepository.PullProductFromCart(ctx, customer.Id.Hex(), product.Id.Hex())
 		}
