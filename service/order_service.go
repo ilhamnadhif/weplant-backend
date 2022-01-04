@@ -163,6 +163,24 @@ func (service *orderServiceImpl) CallbackTransaction(ctx context.Context, reques
 			Balance:   merchant.Balance + (v.Quantity * product.Price),
 		})
 
+		err = service.MerchantRepository.PushProductToManageOrders(ctx, merchant.Id.Hex(), domain.ManageOrderProduct{
+			Id:        primitive.NewObjectID(),
+			CreatedAt: timeNow,
+			UpdatedAt: timeNow,
+			ProductId: product.Id.Hex(),
+			Price:     product.Price,
+			Quantity:  v.Quantity,
+			Address: &domain.Address{
+				Address:    orderRequest["Address"].(string),
+				City:       orderRequest["City"].(string),
+				Province:   orderRequest["Province"].(string),
+				Country:    orderRequest["Country"].(string),
+				PostalCode: orderRequest["PostalCode"].(string),
+				Latitude:   orderRequest["Latitude"].(float64),
+				Longitude:  orderRequest["Longitude"].(float64),
+			},
+		})
+
 		_, err = service.ProductRepository.Update(ctx, domain.Product{
 			Id:        product.Id,
 			UpdatedAt: timeNow,

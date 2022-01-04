@@ -12,6 +12,7 @@ import (
 type MerchantController interface {
 	Create(c *gin.Context)
 	FindById(c *gin.Context)
+	FindManageOrderById(c *gin.Context)
 	Update(c *gin.Context)
 	UpdateMainImage(c *gin.Context)
 	Delete(c *gin.Context)
@@ -85,6 +86,18 @@ func (controller *merchantControllerImpl) FindById(c *gin.Context) {
 	id := c.Param("merchantId")
 
 	res := controller.MerchantService.FindById(ctx, id)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
+func (controller *merchantControllerImpl) FindManageOrderById(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("merchantId")
+
+	res := controller.MerchantService.FindManageOrderById(ctx, id)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

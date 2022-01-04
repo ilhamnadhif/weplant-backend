@@ -10,28 +10,33 @@ import (
 )
 
 type MerchantService interface {
-	Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest
+	Create(ctx context.Context, request web.MerchantCreateRequest, image interface{}) web.MerchantCreateRequest
 	FindById(ctx context.Context, merchantId string) web.MerchantResponse
+	FindManageOrderById(ctx context.Context, merchantId string) web.ManageOrderResponse
 	Update(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest
-	UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest
+	UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, image interface{}) web.MerchantUpdateImageRequest
 	Delete(ctx context.Context, merchantId string)
 }
 
 type merchantServiceImpl struct {
 	MerchantRepository   repository.MerchantRepository
 	CloudinaryRepository repository.CloudinaryRepository
+	ProductRepository    repository.ProductRepository
 }
 
-func NewMerchantService(merchantRepository repository.MerchantRepository, cloudinaryRepository repository.CloudinaryRepository) MerchantService {
+func NewMerchantService(merchantRepository repository.MerchantRepository, cloudinaryRepository repository.CloudinaryRepository, productRepository repository.ProductRepository) MerchantService {
 	return &merchantServiceImpl{
 		MerchantRepository:   merchantRepository,
 		CloudinaryRepository: cloudinaryRepository,
+		ProductRepository:    productRepository,
 	}
 }
 
-func (service *merchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest, file interface{}) web.MerchantCreateRequest {
+func (service *merchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest, image interface{}) web.MerchantCreateRequest {
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, image)
+	helper.PanicIfError(err)
 
-	_, err := service.MerchantRepository.Create(ctx, domain.Merchant{
+	_, err = service.MerchantRepository.Create(ctx, domain.Merchant{
 		CreatedAt: request.CreatedAt,
 		UpdatedAt: request.UpdatedAt,
 		Email:     request.Email,
@@ -41,6 +46,7 @@ func (service *merchantServiceImpl) Create(ctx context.Context, request web.Merc
 		MainImage: &domain.Image{
 			Id:       primitive.NewObjectID(),
 			FileName: request.MainImage.FileName,
+			URL:      url,
 		},
 		Address: &domain.Address{
 			Address:    request.Address.Address,
@@ -54,18 +60,12 @@ func (service *merchantServiceImpl) Create(ctx context.Context, request web.Merc
 	})
 	helper.PanicIfError(err)
 
-	err = service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, file)
-	helper.PanicIfError(err)
-
 	return request
 }
 
 func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId string) web.MerchantResponse {
 
 	res, err := service.MerchantRepository.FindById(ctx, merchantId)
-	helper.PanicIfError(err)
-
-	imgUrl, err := service.CloudinaryRepository.GetImage(ctx, res.MainImage.FileName)
 	helper.PanicIfError(err)
 
 	return web.MerchantResponse{
@@ -78,7 +78,7 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 		MainImage: &web.ImageResponse{
 			Id:       res.MainImage.Id.Hex(),
 			FileName: res.MainImage.FileName,
-			URL:      imgUrl,
+			URL:      res.MainImage.URL,
 		},
 		Address: &web.AddressResponse{
 			Address:    res.Address.Address,
@@ -89,6 +89,38 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 			Latitude:   res.Address.Latitude,
 			Longitude:  res.Address.Longitude,
 		},
+	}
+}
+
+func (service *merchantServiceImpl) FindManageOrderById(ctx context.Context, merchantId string) web.ManageOrderResponse {
+	merchant, err := service.MerchantRepository.FindById(ctx, merchantId)
+	helper.PanicIfError(err)
+
+	var productsRespone []*web.ManageOrderProductResponse
+	for _, v := range merchant.Orders {
+		product, err := service.ProductRepository.FindById(ctx, v.ProductId)
+		helper.PanicIfError(err)
+
+		productsRespone = append(productsRespone, &web.ManageOrderProductResponse{
+			Id:          v.Id.Hex(),
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			ProductId:   product.Id.Hex(),
+			Name:        product.Name,
+			Description: product.Description,
+			Price:       v.Price,
+			MainImage: &web.ImageResponse{
+				Id:       product.MainImage.Id.Hex(),
+				FileName: product.MainImage.FileName,
+				URL:      product.MainImage.URL,
+			},
+			Quantity: v.Quantity,
+		})
+	}
+
+	return web.ManageOrderResponse{
+		MerchantId: merchant.Id.Hex(),
+		Products:   productsRespone,
 	}
 }
 
@@ -115,24 +147,25 @@ func (service *merchantServiceImpl) Update(ctx context.Context, request web.Merc
 	return request
 }
 
-func (service *merchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, file interface{}) web.MerchantUpdateImageRequest {
+func (service *merchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest, image interface{}) web.MerchantUpdateImageRequest {
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	res, err := service.MerchantRepository.Update(ctx, domain.Merchant{
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, image)
+	helper.PanicIfError(err)
+
+	_, err = service.MerchantRepository.Update(ctx, domain.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
 			Id:       merchant.MainImage.Id,
 			FileName: request.MainImage.FileName,
+			URL:      url,
 		},
 	})
 	helper.PanicIfError(err)
 
 	err = service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
-	helper.PanicIfError(err)
-
-	err = service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
 	helper.PanicIfError(err)
 
 	return request
@@ -142,9 +175,9 @@ func (service *merchantServiceImpl) Delete(ctx context.Context, merchantId strin
 	merchant, err := service.MerchantRepository.FindById(ctx, merchantId)
 	helper.PanicIfError(err)
 
-	errDelete := service.MerchantRepository.Delete(ctx, merchant.Id.Hex())
-	helper.PanicIfError(errDelete)
+	err = service.MerchantRepository.Delete(ctx, merchant.Id.Hex())
+	helper.PanicIfError(err)
 
-	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
-	helper.PanicIfError(errDeleteImg)
+	err = service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
+	helper.PanicIfError(err)
 }

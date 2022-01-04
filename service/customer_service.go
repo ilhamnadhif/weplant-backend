@@ -68,8 +68,6 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 	for _, product := range customer.Carts {
 		findProduct, err := service.ProductRepository.FindById(ctx, product.ProductId)
 		helper.PanicIfError(err)
-		url, err := service.CloudinaryRepository.GetImage(ctx, findProduct.MainImage.FileName)
-		helper.PanicIfError(err)
 		products = append(products, &web.CartProductResponse{
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
@@ -80,7 +78,7 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 			MainImage: &web.ImageResponse{
 				Id:       findProduct.MainImage.Id.Hex(),
 				FileName: findProduct.MainImage.FileName,
-				URL:      url,
+				URL:      findProduct.MainImage.URL,
 			},
 			Quantity: product.Quantity,
 		})
@@ -100,14 +98,11 @@ func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerI
 
 	var orders []*web.OrderResponse
 	for _, order := range customer.Orders {
-
-		var productsReponse []*web.OrderProductResponse
+		var productsResponse []*web.OrderProductResponse
 		for _, v := range order.Products {
 			product, err := service.ProductRepository.FindById(ctx, v.ProductId)
 			helper.PanicIfError(err)
-			url, err := service.CloudinaryRepository.GetImage(ctx, product.MainImage.FileName)
-			helper.PanicIfError(err)
-			productsReponse = append(productsReponse, &web.OrderProductResponse{
+			productsResponse = append(productsResponse, &web.OrderProductResponse{
 				ProductId:   product.Id.Hex(),
 				Name:        product.Name,
 				Description: product.Description,
@@ -115,7 +110,7 @@ func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerI
 				MainImage: &web.ImageResponse{
 					Id:       product.MainImage.Id.Hex(),
 					FileName: product.MainImage.FileName,
-					URL:      url,
+					URL:      product.MainImage.URL,
 				},
 				Quantity: v.Quantity,
 			})
@@ -125,7 +120,7 @@ func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerI
 			Id:        order.Id.Hex(),
 			CreatedAt: order.CreatedAt,
 			UpdatedAt: order.UpdatedAt,
-			Products:  productsReponse,
+			Products:  productsResponse,
 			Address: &web.AddressResponse{
 				Address:    order.Address.Address,
 				City:       order.Address.City,
@@ -148,13 +143,13 @@ func (service *customerServiceImpl) Update(ctx context.Context, request web.Cust
 	customer, err := service.CustomerRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	_, errUpdate := service.CustomerRepository.Update(ctx, domain.Customer{
+	_, err = service.CustomerRepository.Update(ctx, domain.Customer{
 		Id:        customer.Id,
 		UpdatedAt: request.UpdatedAt,
 		UserName:  request.UserName,
 		Phone:     request.Phone,
 	})
-	helper.PanicIfError(errUpdate)
+	helper.PanicIfError(err)
 	return request
 }
 
@@ -162,6 +157,6 @@ func (service *customerServiceImpl) Delete(ctx context.Context, customerId strin
 	customer, err := service.CustomerRepository.FindById(ctx, customerId)
 	helper.PanicIfError(err)
 
-	errDelete := service.CustomerRepository.Delete(ctx, customer.Id.Hex())
-	helper.PanicIfError(errDelete)
+	err = service.CustomerRepository.Delete(ctx, customer.Id.Hex())
+	helper.PanicIfError(err)
 }

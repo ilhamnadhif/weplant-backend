@@ -1,10 +1,13 @@
 package domain
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type ManageOrderProduct struct {
-	CreatedAt int      `bson:"created_at,omitempty"`
-	UpdatedAt int      `bson:"updated_at,omitempty"`
-	ProductId string   `bson:"product_id,omitempty"`
-	Price     int      `bson:"price,omitempty"`
-	Quantity  int      `bson:"quantity,omitempty"`
-	Address   *Address `bson:"address,omitempty"`
+	Id        primitive.ObjectID `bson:"_id,omitempty"`
+	CreatedAt int                `bson:"created_at,omitempty"`
+	UpdatedAt int                `bson:"updated_at,omitempty"`
+	ProductId string             `bson:"product_id,omitempty"`
+	Price     int                `bson:"price,omitempty"`
+	Quantity  int                `bson:"quantity,omitempty"`
+	Address   *Address           `bson:"address,omitempty"`
 }

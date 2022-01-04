@@ -14,6 +14,9 @@ type MerchantRepository interface {
 	FindById(ctx context.Context, merchantId string) (domain.Merchant, error)
 	Update(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
 	Delete(ctx context.Context, merchantId string) error
+
+	// Manage Order
+	PushProductToManageOrders(ctx context.Context, merchantId string, product domain.ManageOrderProduct) error
 }
 
 type merchantRepositoryImpl struct {
@@ -56,6 +59,21 @@ func (repository *merchantRepositoryImpl) Update(ctx context.Context, merchant d
 func (repository *merchantRepositoryImpl) Delete(ctx context.Context, merchantId string) error {
 	objectId := helper.ObjectIDFromHex(merchantId)
 	_, err := repository.Collection.DeleteOne(ctx, bson.D{{"_id", objectId}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repository *merchantRepositoryImpl) PushProductToManageOrders(ctx context.Context, merchantId string, product domain.ManageOrderProduct) error {
+	objectId := helper.ObjectIDFromHex(merchantId)
+	_, err := repository.Collection.UpdateOne(ctx, bson.D{
+		{"_id", objectId},
+	}, bson.D{
+		{"$push", bson.D{
+			{"orders", product},
+		}},
+	})
 	if err != nil {
 		return err
 	}

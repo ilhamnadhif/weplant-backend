@@ -16,11 +16,13 @@ type CustomerRepository interface {
 	Update(ctx context.Context, customer domain.Customer) (domain.Customer, error)
 	Delete(ctx context.Context, customerId string) error
 
+	// Cart
 	PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error
 	UpdateProductQuantity(ctx context.Context, customerId string, product domain.CartProduct) error
 	PullProductFromCart(ctx context.Context, customerId string, productId string) error
 	PullProductFromAllCart(ctx context.Context, productId string) error
 
+	// Order
 	CheckoutFromCart(ctx context.Context, customerId string, order domain.Order) error
 }
 

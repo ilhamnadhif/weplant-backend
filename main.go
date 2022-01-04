@@ -67,7 +67,7 @@ func main() {
 	midtransRepository := repository.NewMidtransRepository()
 
 	// service
-	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository)
+	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
 	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
 	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository, customerRepository)
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
@@ -98,6 +98,7 @@ func main() {
 	merchantRouter := v1.Group("/merchants")
 	merchantRouter.POST("/", merchantController.Create)
 	merchantRouter.GET("/:merchantId", merchantController.FindById)
+	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
 	merchantRouter.PUT("/:merchantId", merchantController.Update)
 	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
 	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
