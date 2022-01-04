@@ -12,6 +12,7 @@ type CustomerService interface {
 	Create(ctx context.Context, request web.CustomerCreateRequest) web.CustomerCreateRequest
 	FindById(ctx context.Context, customerId string) web.CustomerResponse
 	FindCartById(ctx context.Context, customerId string) web.CartResponse
+	FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse
 	Update(ctx context.Context, request web.CustomerUpdateRequest) web.CustomerUpdateRequest
 	Delete(ctx context.Context, customerId string)
 }
@@ -64,11 +65,9 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 	var totalPrice int
 
 	var products []*web.CartProductResponse
-	for _, product := range customer.Cart.Products {
-		findProduct, errPrdct := service.ProductRepository.FindById(ctx, product.ProductId)
-		helper.PanicIfError(errPrdct)
-		url, errUrl := service.CloudinaryRepository.GetImage(ctx, findProduct.MainImage.FileName)
-		helper.PanicIfError(errUrl)
+	for _, product := range customer.Carts {
+		findProduct, err := service.ProductRepository.FindById(ctx, product.ProductId)
+		helper.PanicIfError(err)
 		products = append(products, &web.CartProductResponse{
 			CreatedAt:   product.CreatedAt,
 			UpdatedAt:   product.UpdatedAt,
@@ -79,7 +78,7 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 			MainImage: &web.ImageResponse{
 				Id:       findProduct.MainImage.Id.Hex(),
 				FileName: findProduct.MainImage.FileName,
-				URL:      url,
+				URL:      findProduct.MainImage.URL,
 			},
 			Quantity: product.Quantity,
 		})
@@ -88,8 +87,55 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 
 	return web.CartResponse{
 		CustomerId: customer.Id.Hex(),
-		Total: totalPrice,
-		Products: products,
+		Total:      totalPrice,
+		Products:   products,
+	}
+}
+
+func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse {
+	customer, err := service.CustomerRepository.FindById(ctx, customerId)
+	helper.PanicIfError(err)
+
+	var orders []*web.OrderResponse
+	for _, order := range customer.Orders {
+		var productsResponse []*web.OrderProductResponse
+		for _, v := range order.Products {
+			product, err := service.ProductRepository.FindById(ctx, v.ProductId)
+			helper.PanicIfError(err)
+			productsResponse = append(productsResponse, &web.OrderProductResponse{
+				ProductId:   product.Id.Hex(),
+				Name:        product.Name,
+				Description: product.Description,
+				Price:       v.Price,
+				MainImage: &web.ImageResponse{
+					Id:       product.MainImage.Id.Hex(),
+					FileName: product.MainImage.FileName,
+					URL:      product.MainImage.URL,
+				},
+				Quantity: v.Quantity,
+			})
+		}
+
+		orders = append(orders, &web.OrderResponse{
+			Id:        order.Id.Hex(),
+			CreatedAt: order.CreatedAt,
+			UpdatedAt: order.UpdatedAt,
+			Products:  productsResponse,
+			Address: &web.AddressResponse{
+				Address:    order.Address.Address,
+				City:       order.Address.City,
+				Province:   order.Address.Province,
+				Country:    order.Address.Country,
+				PostalCode: order.Address.PostalCode,
+				Latitude:   order.Address.Latitude,
+				Longitude:  order.Address.Longitude,
+			},
+		})
+	}
+
+	return web.CustomerOrdersResponse{
+		CustomerId: customer.Id.Hex(),
+		Orders:     orders,
 	}
 }
 
@@ -97,13 +143,13 @@ func (service *customerServiceImpl) Update(ctx context.Context, request web.Cust
 	customer, err := service.CustomerRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	_, errUpdate := service.CustomerRepository.Update(ctx, domain.Customer{
+	_, err = service.CustomerRepository.Update(ctx, domain.Customer{
 		Id:        customer.Id,
 		UpdatedAt: request.UpdatedAt,
 		UserName:  request.UserName,
 		Phone:     request.Phone,
 	})
-	helper.PanicIfError(errUpdate)
+	helper.PanicIfError(err)
 	return request
 }
 
@@ -111,6 +157,6 @@ func (service *customerServiceImpl) Delete(ctx context.Context, customerId strin
 	customer, err := service.CustomerRepository.FindById(ctx, customerId)
 	helper.PanicIfError(err)
 
-	errDelete := service.CustomerRepository.Delete(ctx, customer.Id.Hex())
-	helper.PanicIfError(errDelete)
+	err = service.CustomerRepository.Delete(ctx, customer.Id.Hex())
+	helper.PanicIfError(err)
 }

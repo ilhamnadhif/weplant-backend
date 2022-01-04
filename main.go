@@ -64,13 +64,15 @@ func main() {
 	categoryRepository := repository.NewCategoryRepository(categoryCollection)
 	productRepository := repository.NewProductRepository(productCollection)
 	customerRepository := repository.NewCustomerRepository(customerCollection)
+	midtransRepository := repository.NewMidtransRepository()
 
 	// service
-	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository)
+	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
 	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
 	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository, customerRepository)
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
+	orderService := service.NewOrderService(customerRepository, productRepository, midtransRepository, merchantRepository)
 
 	// controller
 	merchantController := controller.NewMerchantController(merchantService)
@@ -78,6 +80,7 @@ func main() {
 	productController := controller.NewProductController(productService)
 	customerController := controller.NewCustomerController(customerService)
 	cartController := controller.NewCartController(cartService)
+	orderController := controller.NewOrderController(orderService)
 
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -95,6 +98,7 @@ func main() {
 	merchantRouter := v1.Group("/merchants")
 	merchantRouter.POST("/", merchantController.Create)
 	merchantRouter.GET("/:merchantId", merchantController.FindById)
+	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
 	merchantRouter.PUT("/:merchantId", merchantController.Update)
 	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
 	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
@@ -121,6 +125,7 @@ func main() {
 	customerRouter.POST("/", customerController.Create)
 	customerRouter.GET("/:customerId", customerController.FindById)
 	customerRouter.GET("/:customerId/cart", customerController.FindCartById)
+	customerRouter.GET("/:customerId/order", customerController.FindOrderById)
 	customerRouter.PUT("/:customerId", customerController.Update)
 	customerRouter.DELETE("/:customerId", customerController.Delete)
 
@@ -128,6 +133,10 @@ func main() {
 	cartRouter.POST("/:customerId", cartController.PushProductToCart)
 	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
 	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
+
+	orderRouter := v1.Group("/orders")
+	orderRouter.POST("/:customerId", orderController.CheckoutFromCart)
+	orderRouter.POST("/callback", orderController.CallbackTransaction)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {

@@ -10,12 +10,12 @@ import (
 )
 
 type ProductService interface {
-	Create(ctx context.Context, request web.ProductCreateRequest, file interface{}) web.ProductCreateRequest
+	Create(ctx context.Context, request web.ProductCreateRequest, image interface{}) web.ProductCreateRequest
 	FindById(ctx context.Context, productId string) web.ProductResponse
 	FindAll(ctx context.Context) []web.ProductResponseAll
 	Update(ctx context.Context, request web.ProductUpdateRequest) web.ProductUpdateRequest
-	UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, file interface{}) web.ProductUpdateImageRequest
-	PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest
+	UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, image interface{}) web.ProductUpdateImageRequest
+	PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, image interface{}) web.ImageCreateRequest
 	PullImageFromImages(ctx context.Context, productId string, imageId string)
 	Delete(ctx context.Context, productId string)
 }
@@ -38,21 +38,24 @@ func NewProductService(productRepository repository.ProductRepository, cloudinar
 	}
 }
 
-func (service *productServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest, file interface{}) web.ProductCreateRequest {
+func (service *productServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest, image interface{}) web.ProductCreateRequest {
 
-	merchant, errMerchant := service.MerchantRepository.FindById(ctx, request.MerchantId)
-	helper.PanicIfError(errMerchant)
+	merchant, err := service.MerchantRepository.FindById(ctx, request.MerchantId)
+	helper.PanicIfError(err)
 
 	var categoriesCreateRequest []*domain.ProductCategory
 	for _, category := range request.Categories {
-		ctgry, errCtgry := service.CategoryRepository.FindById(ctx, category.CategoryId)
-		helper.PanicIfError(errCtgry)
+		ctgry, err := service.CategoryRepository.FindById(ctx, category.CategoryId)
+		helper.PanicIfError(err)
 		categoriesCreateRequest = append(categoriesCreateRequest, &domain.ProductCategory{
 			CategoryId: ctgry.Id.Hex(),
 		})
 	}
 
-	res, err := service.ProductRepository.Create(ctx, domain.Product{
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, image)
+	helper.PanicIfError(err)
+
+	_, err = service.ProductRepository.Create(ctx, domain.Product{
 		CreatedAt:   request.CreatedAt,
 		UpdatedAt:   request.UpdatedAt,
 		MerchantId:  merchant.Id.Hex(),
@@ -63,13 +66,11 @@ func (service *productServiceImpl) Create(ctx context.Context, request web.Produ
 		MainImage: &domain.Image{
 			Id:       primitive.NewObjectID(),
 			FileName: request.MainImage.FileName,
+			URL:      url,
 		},
 		Categories: categoriesCreateRequest,
 	})
 	helper.PanicIfError(err)
-
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
-	helper.PanicIfError(errUpload)
 
 	return request
 }
@@ -78,26 +79,19 @@ func (service *productServiceImpl) FindById(ctx context.Context, productId strin
 	res, err := service.ProductRepository.FindById(ctx, productId)
 	helper.PanicIfError(err)
 
-	imgUrl, errImg := service.CloudinaryRepository.GetImage(ctx, res.MainImage.FileName)
-	helper.PanicIfError(errImg)
-
 	var imagesResponse []*web.ImageResponse
 	for _, img := range res.Images {
-		url, errUrl := service.CloudinaryRepository.GetImage(ctx, img.FileName)
-		helper.PanicIfError(errUrl)
 		imagesResponse = append(imagesResponse, &web.ImageResponse{
 			Id:       img.Id.Hex(),
 			FileName: img.FileName,
-			URL:      url,
+			URL:      img.URL,
 		})
 	}
 
 	var categoriesResponse []*web.CategoryResponse
 	for _, category := range res.Categories {
-		ctgry, errCtgry := service.CategoryRepository.FindById(ctx, category.CategoryId)
-		helper.PanicIfError(errCtgry)
-		url, errUrl := service.CloudinaryRepository.GetImage(ctx, ctgry.MainImage.FileName)
-		helper.PanicIfError(errUrl)
+		ctgry, err := service.CategoryRepository.FindById(ctx, category.CategoryId)
+		helper.PanicIfError(err)
 		categoriesResponse = append(categoriesResponse, &web.CategoryResponse{
 			Id:        ctgry.Id.Hex(),
 			CreatedAt: ctgry.CreatedAt,
@@ -106,7 +100,7 @@ func (service *productServiceImpl) FindById(ctx context.Context, productId strin
 			MainImage: &web.ImageResponse{
 				Id:       ctgry.MainImage.Id.Hex(),
 				FileName: ctgry.MainImage.FileName,
-				URL:      url,
+				URL:      ctgry.MainImage.URL,
 			},
 		})
 	}
@@ -122,7 +116,7 @@ func (service *productServiceImpl) FindById(ctx context.Context, productId strin
 		MainImage: &web.ImageResponse{
 			Id:       res.MainImage.Id.Hex(),
 			FileName: res.MainImage.FileName,
-			URL:      imgUrl,
+			URL:      res.MainImage.URL,
 		},
 		Images:     imagesResponse,
 		Categories: categoriesResponse,
@@ -135,8 +129,6 @@ func (service *productServiceImpl) FindAll(ctx context.Context) []web.ProductRes
 
 	var productsResponse []web.ProductResponseAll
 	for _, product := range res {
-		imgUrl, errImg := service.CloudinaryRepository.GetImage(ctx, product.MainImage.FileName)
-		helper.PanicIfError(errImg)
 		productsResponse = append(productsResponse, web.ProductResponseAll{
 			Id:          product.Id.Hex(),
 			CreatedAt:   product.CreatedAt,
@@ -147,7 +139,7 @@ func (service *productServiceImpl) FindAll(ctx context.Context) []web.ProductRes
 			MainImage: &web.ImageResponse{
 				Id:       product.MainImage.Id.Hex(),
 				FileName: product.MainImage.FileName,
-				URL:      imgUrl,
+				URL:      product.MainImage.URL,
 			},
 		})
 	}
@@ -161,8 +153,8 @@ func (service *productServiceImpl) Update(ctx context.Context, request web.Produ
 
 	var categoriesUpdateRequest []*domain.ProductCategory
 	for _, category := range request.Categories {
-		ctgry, errCtgry := service.CategoryRepository.FindById(ctx, category.CategoryId)
-		helper.PanicIfError(errCtgry)
+		ctgry, err := service.CategoryRepository.FindById(ctx, category.CategoryId)
+		helper.PanicIfError(err)
 		categoriesUpdateRequest = append(categoriesUpdateRequest, &domain.ProductCategory{
 			CategoryId: ctgry.Id.Hex(),
 		})
@@ -181,40 +173,44 @@ func (service *productServiceImpl) Update(ctx context.Context, request web.Produ
 	return request
 }
 
-func (service *productServiceImpl) UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, file interface{}) web.ProductUpdateImageRequest {
+func (service *productServiceImpl) UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest, image interface{}) web.ProductUpdateImageRequest {
 	product, err := service.ProductRepository.FindById(ctx, request.Id)
 	helper.PanicIfError(err)
 
-	res, errUpdate := service.ProductRepository.Update(ctx, domain.Product{
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, image)
+	helper.PanicIfError(err)
+
+	_, err = service.ProductRepository.Update(ctx, domain.Product{
 		Id:        product.Id,
 		UpdatedAt: request.UpdatedAt,
 		MainImage: &domain.Image{
 			Id:       product.MainImage.Id,
 			FileName: request.MainImage.FileName,
+			URL:      url,
 		},
 	})
-	helper.PanicIfError(errUpdate)
+	helper.PanicIfError(err)
 
-	errDelete := service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
-	helper.PanicIfError(errDelete)
-
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.MainImage.FileName, file)
-	helper.PanicIfError(errUpload)
+	err = service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
+	helper.PanicIfError(err)
 
 	return request
 }
 
-func (service *productServiceImpl) PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, file interface{}) web.ImageCreateRequest {
+func (service *productServiceImpl) PushImageIntoImages(ctx context.Context, productId string, request web.ImageCreateRequest, image interface{}) web.ImageCreateRequest {
 	product, err := service.ProductRepository.FindById(ctx, productId)
 	helper.PanicIfError(err)
-	res, errPush := service.ProductRepository.PushImageIntoImages(ctx, product.Id.Hex(), domain.Image{
+
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.FileName, image)
+	helper.PanicIfError(err)
+
+	_, err = service.ProductRepository.PushImageIntoImages(ctx, product.Id.Hex(), domain.Image{
 		Id:       primitive.NewObjectID(),
 		FileName: request.FileName,
+		URL:      url,
 	})
-	helper.PanicIfError(errPush)
+	helper.PanicIfError(err)
 
-	errUpload := service.CloudinaryRepository.UploadImage(ctx, res.FileName, file)
-	helper.PanicIfError(errUpload)
 	return request
 }
 
@@ -222,11 +218,11 @@ func (service *productServiceImpl) PullImageFromImages(ctx context.Context, prod
 	product, err := service.ProductRepository.FindById(ctx, productId)
 	helper.PanicIfError(err)
 
-	res, errPull := service.ProductRepository.PullImageFromImages(ctx, product.Id.Hex(), imageId)
-	helper.PanicIfError(errPull)
+	res, err := service.ProductRepository.PullImageFromImages(ctx, product.Id.Hex(), imageId)
+	helper.PanicIfError(err)
 
-	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, res.FileName)
-	helper.PanicIfError(errDeleteImg)
+	err = service.CloudinaryRepository.DeleteImage(ctx, res.FileName)
+	helper.PanicIfError(err)
 
 }
 
@@ -234,17 +230,17 @@ func (service *productServiceImpl) Delete(ctx context.Context, productId string)
 	product, err := service.ProductRepository.FindById(ctx, productId)
 	helper.PanicIfError(err)
 
-	errDelete := service.ProductRepository.Delete(ctx, product.Id.Hex())
-	helper.PanicIfError(errDelete)
+	err = service.ProductRepository.Delete(ctx, product.Id.Hex())
+	helper.PanicIfError(err)
 
-	errPull := service.CustomerRepository.PullAllProductFromCart(ctx, product.Id.Hex())
-	helper.PanicIfError(errPull)
+	err = service.CustomerRepository.PullProductFromAllCart(ctx, product.Id.Hex())
+	helper.PanicIfError(err)
 
-	errDeleteImg := service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
-	helper.PanicIfError(errDeleteImg)
+	err = service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
+	helper.PanicIfError(err)
 
 	for _, image := range product.Images {
-		errDeleteImage := service.CloudinaryRepository.DeleteImage(ctx, image.FileName)
-		helper.PanicIfError(errDeleteImage)
+		err = service.CloudinaryRepository.DeleteImage(ctx, image.FileName)
+		helper.PanicIfError(err)
 	}
 }

@@ -16,10 +16,14 @@ type CustomerRepository interface {
 	Update(ctx context.Context, customer domain.Customer) (domain.Customer, error)
 	Delete(ctx context.Context, customerId string) error
 
-	PushProductTCart(ctx context.Context, customerId string, product domain.CartProduct) error
+	// Cart
+	PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error
 	UpdateProductQuantity(ctx context.Context, customerId string, product domain.CartProduct) error
 	PullProductFromCart(ctx context.Context, customerId string, productId string) error
-	PullAllProductFromCart(ctx context.Context, productId string) error
+	PullProductFromAllCart(ctx context.Context, productId string) error
+
+	// Order
+	CheckoutFromCart(ctx context.Context, customerId string, order domain.Order) error
 }
 
 type customerRepositoryImpl struct {
@@ -69,18 +73,18 @@ func (repository *customerRepositoryImpl) Delete(ctx context.Context, customerId
 }
 
 //
-func (repository *customerRepositoryImpl) PushProductTCart(ctx context.Context, customerId string, product domain.CartProduct) error {
+func (repository *customerRepositoryImpl) PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{
 			bson.D{{"_id", objectId}},
-			bson.D{{"cart.products.product_id", bson.D{
+			bson.D{{"carts.product_id", bson.D{
 				{"$ne", product.ProductId},
 			}}},
 		}},
 	}, bson.D{
 		{"$push", bson.D{
-			{"cart.products", product},
+			{"carts", product},
 		}},
 	})
 	if err != nil {
@@ -94,18 +98,18 @@ func (repository *customerRepositoryImpl) UpdateProductQuantity(ctx context.Cont
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{
 			bson.D{{"_id", objectId}},
-			bson.D{{"cart.products.product_id", product.ProductId}},
-			bson.D{{"$where", fmt.Sprintf("for (let i = 0; i < this.cart.products.length; i++) {if (this.cart.products[i].product_id == '%s' && this.cart.products[i].quantity+%d >= 1) {return true} }", product.ProductId, product.Quantity)}},
+			bson.D{{"carts.product_id", product.ProductId}},
+			bson.D{{"$where", fmt.Sprintf("for (let i = 0; i < this.carts.length; i++) {if (this.carts[i].product_id == '%s' && this.carts[i].quantity+%d >= 1) {return true} }", product.ProductId, product.Quantity)}},
 		}},
 	}, bson.D{
 		{
 			"$set", bson.D{
-				{"cart.products.$.updated_at", product.UpdatedAt},
+				{"carts.$.updated_at", product.UpdatedAt},
 			},
 		},
 		{"$inc", bson.D{
 			{
-				"cart.products.$.quantity", product.Quantity,
+				"carts.$.quantity", product.Quantity,
 			},
 		}},
 	})
@@ -122,7 +126,7 @@ func (repository *customerRepositoryImpl) PullProductFromCart(ctx context.Contex
 	}, bson.D{
 		{
 			"$pull", bson.D{{
-				"cart.products", bson.D{
+				"carts", bson.D{
 					{"product_id", productId},
 				},
 			}},
@@ -134,15 +138,32 @@ func (repository *customerRepositoryImpl) PullProductFromCart(ctx context.Contex
 	return nil
 }
 
-func (repository *customerRepositoryImpl) PullAllProductFromCart(ctx context.Context, productId string) error {
+func (repository *customerRepositoryImpl) PullProductFromAllCart(ctx context.Context, productId string) error {
 	_, err := repository.Collection.UpdateMany(ctx, bson.D{}, bson.D{
 		{
 			"$pull", bson.D{{
-				"cart.products", bson.D{
+				"carts", bson.D{
 					{"product_id", productId},
 				},
 			}},
 		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repository *customerRepositoryImpl) CheckoutFromCart(ctx context.Context, customerId string, order domain.Order) error {
+	objectId := helper.ObjectIDFromHex(customerId)
+	_, err := repository.Collection.UpdateOne(ctx, bson.D{
+		{"$and", bson.A{
+			bson.D{{"_id", objectId}},
+		}},
+	}, bson.D{
+		{"$push", bson.D{
+			{"orders", order},
+		}},
 	})
 	if err != nil {
 		return err

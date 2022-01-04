@@ -11,7 +11,8 @@ import (
 type CustomerController interface {
 	Create(c *gin.Context)
 	FindById(c *gin.Context)
-	FindCartById(c * gin.Context)
+	FindCartById(c *gin.Context)
+	FindOrderById(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 }
@@ -20,7 +21,7 @@ type customerControllerImpl struct {
 	CustomerService service.CustomerService
 }
 
-func NewCustomerController(customerService service.CustomerService) CustomerController  {
+func NewCustomerController(customerService service.CustomerService) CustomerController {
 	return &customerControllerImpl{
 		CustomerService: customerService,
 	}
@@ -61,6 +62,18 @@ func (controller *customerControllerImpl) FindCartById(c *gin.Context) {
 	id := c.Param("customerId")
 
 	res := controller.CustomerService.FindCartById(ctx, id)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
+func (controller *customerControllerImpl) FindOrderById(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("customerId")
+
+	res := controller.CustomerService.FindOrderById(ctx, id)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

@@ -3,14 +3,13 @@ package repository
 import (
 	"context"
 	"github.com/cloudinary/cloudinary-go"
-	"github.com/cloudinary/cloudinary-go/api/admin"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"os"
 )
 
 type CloudinaryRepository interface {
-	UploadImage(ctx context.Context, filename string, image interface{}) error
-	GetImage(ctx context.Context, filename string) (string, error)
+	UploadImage(ctx context.Context, filename string, image interface{}) (string, error)
+	//GetImage(ctx context.Context, filename string) (string, error)
 	DeleteImage(ctx context.Context, filename string) error
 }
 
@@ -24,28 +23,30 @@ func NewCloudinaryRepository(cloud *cloudinary.Cloudinary) CloudinaryRepository 
 	}
 }
 
-func (repository *cloudinaryRepositoryImpl) UploadImage(ctx context.Context, filename string, file interface{}) error {
+func (repository *cloudinaryRepositoryImpl) UploadImage(ctx context.Context, filename string, file interface{}) (string, error) {
 	cloudFolder := os.Getenv("CLOUDINARY_FOLDER")
-	_, err := repository.Cloud.Upload.Upload(ctx, file, uploader.UploadParams{
+	var url string
+	res, err := repository.Cloud.Upload.Upload(ctx, file, uploader.UploadParams{
 		PublicID: cloudFolder + "/" + filename,
 	})
+	url = res.URL
 	if err != nil {
-		return err
+		return url, err
 	}
-	return nil
+	return url, nil
 }
-func (repository *cloudinaryRepositoryImpl) GetImage(ctx context.Context, filename string) (string, error) {
-	cloudFolder := os.Getenv("CLOUDINARY_FOLDER")
-	var resURL string
-	res, err := repository.Cloud.Admin.Asset(ctx, admin.AssetParams{
-		PublicID: cloudFolder + "/" + filename,
-	})
-	if err != nil {
-		return resURL, err
-	}
-	resURL = res.SecureURL
-	return resURL, nil
-}
+//func (repository *cloudinaryRepositoryImpl) GetImage(ctx context.Context, filename string) (string, error) {
+//	cloudFolder := os.Getenv("CLOUDINARY_FOLDER")
+//	var resURL string
+//	res, err := repository.Cloud.Admin.Asset(ctx, admin.AssetParams{
+//		PublicID: cloudFolder + "/" + filename,
+//	})
+//	if err != nil {
+//		return resURL, err
+//	}
+//	resURL = res.SecureURL
+//	return resURL, nil
+//}
 
 func (repository *cloudinaryRepositoryImpl) DeleteImage(ctx context.Context, filename string) error {
 	cloudFolder := os.Getenv("CLOUDINARY_FOLDER")

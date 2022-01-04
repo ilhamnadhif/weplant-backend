@@ -18,16 +18,16 @@ type CartResponse struct {
 }
 
 type CartProductCreateRequest struct {
-	CreatedAt  int
-	UpdatedAt  int
-	CustomerId string
+	CreatedAt  int    `json:"created_at"`
+	UpdatedAt  int    `json:"updated_at"`
+	CustomerId string `json:"customer_id"`
 	ProductId  string `json:"product_id"`
-	Quantity   int
+	Quantity   int    `json:"quantity"`
 }
 
 type CartProductUpdateRequest struct {
-	UpdatedAt  int
-	CustomerId string
-	ProductId  string
-	Quantity   int `json:"quantity"`
+	UpdatedAt  int    `json:"updated_at"`
+	CustomerId string `json:"customer_id"`
+	ProductId  string `json:"product_id"`
+	Quantity   int    `json:"quantity"`
 }

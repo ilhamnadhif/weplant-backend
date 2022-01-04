@@ -12,6 +12,7 @@ import (
 type MerchantController interface {
 	Create(c *gin.Context)
 	FindById(c *gin.Context)
+	FindManageOrderById(c *gin.Context)
 	Update(c *gin.Context)
 	UpdateMainImage(c *gin.Context)
 	Delete(c *gin.Context)
@@ -38,8 +39,7 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 	city := c.PostForm("city")
 	province := c.PostForm("province")
 	country := c.PostForm("country")
-	postalCode, err := strconv.Atoi(c.PostForm("postal_code"))
-	helper.PanicIfError(err)
+	postalCode := c.PostForm("postal_code")
 	latitude, err := strconv.ParseFloat(c.PostForm("latitude"), 64)
 	helper.PanicIfError(err)
 	longitude, err := strconv.ParseFloat(c.PostForm("longitude"), 64)
@@ -93,6 +93,18 @@ func (controller *merchantControllerImpl) FindById(c *gin.Context) {
 	})
 }
 
+func (controller *merchantControllerImpl) FindManageOrderById(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("merchantId")
+
+	res := controller.MerchantService.FindManageOrderById(ctx, id)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
 func (controller *merchantControllerImpl) Update(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := c.Param("merchantId")
@@ -125,7 +137,7 @@ func (controller *merchantControllerImpl) UpdateMainImage(c *gin.Context) {
 	filename := helper.GetFileName(image.Filename)
 
 	res := controller.MerchantService.UpdateMainImage(ctx, web.MerchantUpdateImageRequest{
-		Id: id,
+		Id:        id,
 		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,

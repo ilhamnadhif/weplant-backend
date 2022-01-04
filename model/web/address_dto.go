@@ -5,7 +5,7 @@ type AddressResponse struct {
 	City       string  `json:"city"`
 	Province   string  `json:"province"`
 	Country    string  `json:"country"`
-	PostalCode int     `json:"postal_code"`
+	PostalCode string  `json:"postal_code"`
 	Latitude   float64 `json:"latitude"`
 	Longitude  float64 `json:"longitude"`
 }
@@ -15,7 +15,7 @@ type AddressCreateRequest struct {
 	City       string  `json:"city"`
 	Province   string  `json:"province"`
 	Country    string  `json:"country"`
-	PostalCode int     `json:"postal_code"`
+	PostalCode string  `json:"postal_code"`
 	Latitude   float64 `json:"latitude"`
 	Longitude  float64 `json:"longitude"`
 }
@@ -25,7 +25,7 @@ type AddressUpdateRequest struct {
 	City       string  `json:"city"`
 	Province   string  `json:"province"`
 	Country    string  `json:"country"`
-	PostalCode int     `json:"postal_code"`
+	PostalCode string  `json:"postal_code"`
 	Latitude   float64 `json:"latitude"`
 	Longitude  float64 `json:"longitude"`
 }
