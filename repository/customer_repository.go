@@ -13,6 +13,7 @@ import (
 type CustomerRepository interface {
 	Create(ctx context.Context, customer domain.Customer) (domain.Customer, error)
 	FindById(ctx context.Context, customerId string) (domain.Customer, error)
+	FindByEmail(ctx context.Context, email string) (domain.Customer, error)
 	Update(ctx context.Context, customer domain.Customer) (domain.Customer, error)
 	Delete(ctx context.Context, customerId string) error
 
@@ -49,6 +50,15 @@ func (repository *customerRepositoryImpl) FindById(ctx context.Context, customer
 	objectId := helper.ObjectIDFromHex(customerId)
 	var customer domain.Customer
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&customer)
+	if err != nil {
+		return customer, err
+	}
+	return customer, nil
+}
+
+func (repository *customerRepositoryImpl) FindByEmail(ctx context.Context, email string) (domain.Customer, error) {
+	var customer domain.Customer
+	err := repository.Collection.FindOne(ctx, bson.D{{"email", email}}).Decode(&customer)
 	if err != nil {
 		return customer, err
 	}

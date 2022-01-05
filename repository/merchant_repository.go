@@ -12,6 +12,7 @@ import (
 type MerchantRepository interface {
 	Create(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
 	FindById(ctx context.Context, merchantId string) (domain.Merchant, error)
+	FindByEmail(ctx context.Context, email string) (domain.Merchant, error)
 	Update(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
 	Delete(ctx context.Context, merchantId string) error
 
@@ -42,6 +43,15 @@ func (repository *merchantRepositoryImpl) FindById(ctx context.Context, merchant
 	var merchant domain.Merchant
 	objectId := helper.ObjectIDFromHex(merchantId)
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&merchant)
+	if err != nil {
+		return merchant, err
+	}
+	return merchant, nil
+}
+
+func (repository *merchantRepositoryImpl)FindByEmail(ctx context.Context, email string) (domain.Merchant, error){
+	var merchant domain.Merchant
+	err := repository.Collection.FindOne(ctx, bson.D{{"email", email}}).Decode(&merchant)
 	if err != nil {
 		return merchant, err
 	}

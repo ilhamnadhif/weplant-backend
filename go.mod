@@ -6,7 +6,9 @@ require (
 	github.com/cloudinary/cloudinary-go v1.5.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/validator/v10 v10.9.0
+	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/joho/godotenv v1.4.0
+	github.com/midtrans/midtrans-go v1.2.2
 	go.mongodb.org/mongo-driver v1.8.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 )
@@ -25,7 +27,6 @@ require (
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/midtrans/midtrans-go v1.2.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
