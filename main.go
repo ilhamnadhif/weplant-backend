@@ -5,12 +5,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
 	"weplant-backend/config"
 	"weplant-backend/controller"
 	"weplant-backend/helper"
+	"weplant-backend/middleware"
+	"weplant-backend/model/domain"
 	"weplant-backend/model/web"
 	"weplant-backend/repository"
 	"weplant-backend/service"
@@ -45,15 +48,18 @@ func main() {
 		Keys:    bson.D{{Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
-
 	productCollection := database.Collection("product")
 	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
-
 	customerCollection := database.Collection("customer")
 	customerCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	adminCollection := database.Collection("admin")
+	adminCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
@@ -65,6 +71,7 @@ func main() {
 	productRepository := repository.NewProductRepository(productCollection)
 	customerRepository := repository.NewCustomerRepository(customerCollection)
 	midtransRepository := repository.NewMidtransRepository()
+	adminRepository := repository.NewAdminRepository(adminCollection)
 
 	// service
 	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
@@ -73,6 +80,8 @@ func main() {
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
 	orderService := service.NewOrderService(customerRepository, productRepository, midtransRepository, merchantRepository)
+	jwtService := service.NewJWTService()
+	authService := service.NewAuthService(merchantRepository, customerRepository, adminRepository)
 
 	// controller
 	merchantController := controller.NewMerchantController(merchantService)
@@ -81,6 +90,24 @@ func main() {
 	customerController := controller.NewCustomerController(customerService)
 	cartController := controller.NewCartController(cartService)
 	orderController := controller.NewOrderController(orderService)
+	authController := controller.NewAuthController(authService, jwtService)
+
+	// middleware
+	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+
+	// create admin
+	res, err := adminRepository.FindAll(context.Background())
+	helper.PanicIfError(err)
+	if len(res) == 0 {
+		_, err = adminRepository.Create(context.Background(), domain.Admin{
+			Id:        primitive.ObjectID{},
+			CreatedAt: helper.GetTimeNow(),
+			UpdatedAt: helper.GetTimeNow(),
+			Email:     "admin@admin.com",
+			Password:  helper.HashPassword("admin999"),
+		})
+		helper.PanicIfError(err)
+	}
 
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -99,22 +126,25 @@ func main() {
 	merchantRouter.POST("/", merchantController.Create)
 	merchantRouter.GET("/:merchantId", merchantController.FindById)
 	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
+	merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
 	merchantRouter.PUT("/:merchantId", merchantController.Update)
 	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
 	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
 
 	categoryRouter := v1.Group("/categories")
-	categoryRouter.POST("/", categoryController.Create)
 	categoryRouter.GET("/:categoryId", categoryController.FindById)
 	categoryRouter.GET("/", categoryController.FindAll)
+	categoryRouter.Use(authMiddleware.AuthJWT("admin"))
+	categoryRouter.POST("/", categoryController.Create)
 	categoryRouter.PUT("/:categoryId", categoryController.Update)
 	categoryRouter.PATCH("/:categoryId/image", categoryController.UpdateMainImage)
 	categoryRouter.DELETE("/:categoryId", categoryController.Delete)
 
 	productRouter := v1.Group("/products")
-	productRouter.POST("/", productController.Create)
 	productRouter.GET("/:productId", productController.FindById)
 	productRouter.GET("/", productController.FindAll)
+	productRouter.Use(authMiddleware.AuthJWT("merchant"))
+	productRouter.POST("/", productController.Create)
 	productRouter.PUT("/:productId", productController.Update)
 	productRouter.PATCH("/:productId/image", productController.UpdateMainImage)
 	productRouter.POST("/:productId/images", productController.PushImageIntoImages)
@@ -126,17 +156,25 @@ func main() {
 	customerRouter.GET("/:customerId", customerController.FindById)
 	customerRouter.GET("/:customerId/cart", customerController.FindCartById)
 	customerRouter.GET("/:customerId/order", customerController.FindOrderById)
+	customerRouter.Use(authMiddleware.AuthJWT("customer"))
 	customerRouter.PUT("/:customerId", customerController.Update)
 	customerRouter.DELETE("/:customerId", customerController.Delete)
 
 	cartRouter := v1.Group("/carts")
+	cartRouter.Use(authMiddleware.AuthJWT("customer"))
 	cartRouter.POST("/:customerId", cartController.PushProductToCart)
 	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
 	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
 
 	orderRouter := v1.Group("/orders")
-	orderRouter.POST("/:customerId", orderController.CheckoutFromCart)
 	orderRouter.POST("/callback", orderController.CallbackTransaction)
+	orderRouter.Use(authMiddleware.AuthJWT("customer"))
+	orderRouter.POST("/:customerId", orderController.CheckoutFromCart)
+
+	authRouter := v1.Group("/auth")
+	authRouter.POST("/merchant", authController.LoginMerchant)
+	authRouter.POST("/customer", authController.LoginCustomer)
+	authRouter.POST("/admin", authController.LoginAdmin)
 
 	errorRun := r.Run(":3000")
 	if errorRun != nil {
