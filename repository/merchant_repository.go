@@ -13,7 +13,9 @@ type MerchantRepository interface {
 	Create(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
 	FindById(ctx context.Context, merchantId string) (domain.Merchant, error)
 	FindByEmail(ctx context.Context, email string) (domain.Merchant, error)
+	FindBySlug(ctx context.Context, slug string) (domain.Merchant, error)
 	Update(ctx context.Context, merchant domain.Merchant) (domain.Merchant, error)
+	//UpdateBalance(ctx context.Context, merchant domain.Merchant) error
 	Delete(ctx context.Context, merchantId string) error
 
 	// Manage Order
@@ -49,9 +51,18 @@ func (repository *merchantRepositoryImpl) FindById(ctx context.Context, merchant
 	return merchant, nil
 }
 
-func (repository *merchantRepositoryImpl)FindByEmail(ctx context.Context, email string) (domain.Merchant, error){
+func (repository *merchantRepositoryImpl) FindByEmail(ctx context.Context, email string) (domain.Merchant, error) {
 	var merchant domain.Merchant
 	err := repository.Collection.FindOne(ctx, bson.D{{"email", email}}).Decode(&merchant)
+	if err != nil {
+		return merchant, err
+	}
+	return merchant, nil
+}
+
+func (repository *merchantRepositoryImpl) FindBySlug(ctx context.Context, slug string) (domain.Merchant, error) {
+	var merchant domain.Merchant
+	err := repository.Collection.FindOne(ctx, bson.D{{"slug", slug}}).Decode(&merchant)
 	if err != nil {
 		return merchant, err
 	}
@@ -65,6 +76,22 @@ func (repository *merchantRepositoryImpl) Update(ctx context.Context, merchant d
 	}
 	return merchant, nil
 }
+
+//func (repository *merchantRepositoryImpl) UpdateBalance(ctx context.Context, merchant domain.Merchant) error {
+//	_, err := repository.Collection.UpdateByID(ctx, merchant.Id, bson.D{
+//		{
+//			"$inc", bson.D{
+//				{
+//					"balance", merchant.Balance,
+//				},
+//			},
+//		},
+//	})
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (repository *merchantRepositoryImpl) Delete(ctx context.Context, merchantId string) error {
 	objectId := helper.ObjectIDFromHex(merchantId)
@@ -82,7 +109,15 @@ func (repository *merchantRepositoryImpl) PushProductToManageOrders(ctx context.
 	}, bson.D{
 		{"$push", bson.D{
 			{"orders", product},
-		}},
+		},
+		},
+		{
+			"$inc", bson.D{
+				{
+					"balance", product.Price * product.Quantity,
+				},
+			},
+		},
 	})
 	if err != nil {
 		return err

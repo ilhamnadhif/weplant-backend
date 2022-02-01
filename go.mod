@@ -3,6 +3,7 @@ module weplant-backend
 go 1.17
 
 require (
+	github.com/appleboy/gin-jwt/v2 v2.8.0
 	github.com/cloudinary/cloudinary-go v1.5.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/validator/v10 v10.9.0

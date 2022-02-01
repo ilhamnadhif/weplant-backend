@@ -1,11 +1,9 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"strings"
-	"weplant-backend/model/web"
+	"weplant-backend/helper"
 	"weplant-backend/service"
 )
 
@@ -23,67 +21,42 @@ func NewAuthMiddleware(jwtService service.JWTService) AuthMiddleware {
 	}
 }
 
+
 func (middleware *authMiddleWareImpl) AuthJWT(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
-		if len(strings.Split(header, " ")) < 2 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-				Code:   http.StatusUnauthorized,
-				Status: "Unauthorized",
-				Data:   "invalid token",
-			})
+		if len(strings.Split(header, " ")) != 2 {
+			helper.ResponseUnauthorized(c, "auth header is invalid")
 			return
 		}
 		token := strings.Split(header, " ")[1]
 
-		fmt.Println(token)
-
 		payload, err := middleware.JWTService.ValidateToken(token)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-				Code:   http.StatusUnauthorized,
-				Status: "Unauthorized",
-				Data:   err.Error(),
-			})
+			helper.ResponseUnauthorized(c, err.Error())
 			return
 		}
 
-		if role == "customer" {
-			if payload.Role != "customer" {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-					Code:   http.StatusUnauthorized,
-					Status: "Unauthorized",
-					Data:   "You don't have permission to access",
-				})
-				return
-			}
-		} else if role == "merchant" {
-			if payload.Role != "merchant" {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-					Code:   http.StatusUnauthorized,
-					Status: "Unauthorized",
-					Data:   "You don't have permission to access",
-				})
-				return
-			}
-		} else if role == "admin" {
+		switch role {
+		case "admin":
 			if payload.Role != "admin" {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-					Code:   http.StatusUnauthorized,
-					Status: "Unauthorized",
-					Data:   "You don't have permission to access",
-				})
+				helper.ResponseUnauthorized(c, "you don't have permission to access this resource")
 				return
 			}
-		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, web.WebResponse{
-				Code:   http.StatusUnauthorized,
-				Status: "Unauthorized",
-				Data:   "You don't have permission to access",
-			})
+		case "merchant":
+			if payload.Role != "merchant" {
+				helper.ResponseUnauthorized(c, "you don't have permission to access this resource")
+				return
+			}
+		case "customer":
+			if payload.Role != "customer" {
+				helper.ResponseUnauthorized(c, "you don't have permission to access this resource")
+				return
+			}
+		default:
+			helper.ResponseUnauthorized(c, "you don't have permission to access this resource")
 			return
 		}
 		c.Next()
-
 	}
 }

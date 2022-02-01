@@ -6,7 +6,9 @@ type MerchantResponse struct {
 	UpdatedAt int              `json:"updated_at"`
 	Email     string           `json:"email"`
 	Name      string           `json:"name"`
+	Slug      string           `json:"slug"`
 	Phone     string           `json:"phone"`
+	Balance   int64            `json:"balance"`
 	MainImage *ImageResponse   `json:"main_image"`
 	Address   *AddressResponse `json:"address"`
 }
@@ -17,6 +19,7 @@ type MerchantCreateRequest struct {
 	Email     string                `json:"email"`
 	Password  string                `json:"password"`
 	Name      string                `json:"name"`
+	Slug      string                `json:"slug"`
 	Phone     string                `json:"phone"`
 	MainImage *ImageCreateRequest   `json:"main_image"`
 	Address   *AddressCreateRequest `json:"address"`

@@ -12,7 +12,8 @@ type CustomerService interface {
 	Create(ctx context.Context, request web.CustomerCreateRequest) web.CustomerCreateRequest
 	FindById(ctx context.Context, customerId string) web.CustomerResponse
 	FindCartById(ctx context.Context, customerId string) web.CartResponse
-	FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse
+	FindTransactionById(ctx context.Context, customerId string) web.TransactionResponse
+	FindOrderById(ctx context.Context, customerId string) web.OrderResponse
 	Update(ctx context.Context, request web.CustomerUpdateRequest) web.CustomerUpdateRequest
 	Delete(ctx context.Context, customerId string)
 }
@@ -63,80 +64,134 @@ func (service *customerServiceImpl) FindCartById(ctx context.Context, customerId
 	helper.PanicIfError(err)
 
 	var totalPrice int
-
 	var products []*web.CartProductResponse
+
 	for _, product := range customer.Carts {
 		findProduct, err := service.ProductRepository.FindById(ctx, product.ProductId)
 		helper.PanicIfError(err)
+		subTotal := product.Quantity * findProduct.Price
 		products = append(products, &web.CartProductResponse{
-			CreatedAt:   product.CreatedAt,
-			UpdatedAt:   product.UpdatedAt,
 			ProductId:   findProduct.Id.Hex(),
 			Name:        findProduct.Name,
+			Slug:        findProduct.Slug,
 			Description: findProduct.Description,
 			Price:       findProduct.Price,
+			Quantity:    product.Quantity,
+			SubTotal:    subTotal,
 			MainImage: &web.ImageResponse{
 				Id:       findProduct.MainImage.Id.Hex(),
 				FileName: findProduct.MainImage.FileName,
 				URL:      findProduct.MainImage.URL,
 			},
-			Quantity: product.Quantity,
 		})
-		totalPrice += product.Quantity * findProduct.Price
+		totalPrice += subTotal
 	}
 
 	return web.CartResponse{
 		CustomerId: customer.Id.Hex(),
-		Total:      totalPrice,
+		TotalPrice: totalPrice,
 		Products:   products,
 	}
 }
-
-func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerId string) web.CustomerOrdersResponse {
+func (service *customerServiceImpl) FindTransactionById(ctx context.Context, customerId string) web.TransactionResponse {
 	customer, err := service.CustomerRepository.FindById(ctx, customerId)
 	helper.PanicIfError(err)
 
-	var orders []*web.OrderResponse
-	for _, order := range customer.Orders {
-		var productsResponse []*web.OrderProductResponse
-		for _, v := range order.Products {
-			product, err := service.ProductRepository.FindById(ctx, v.ProductId)
+	var transactionResponse []*web.TransactionDetailResponse
+
+	for _, v := range customer.Transactions {
+
+		var totalPrice int
+
+		var productResponse []*web.TransactionProductResponse
+
+		for _, p := range v.Products {
+			product, err := service.ProductRepository.FindById(ctx, p.ProductId)
 			helper.PanicIfError(err)
-			productsResponse = append(productsResponse, &web.OrderProductResponse{
+
+			subtotal := p.Price * p.Quantity
+
+			totalPrice += subtotal
+
+			productResponse = append(productResponse, &web.TransactionProductResponse{
 				ProductId:   product.Id.Hex(),
 				Name:        product.Name,
+				Slug:        product.Slug,
 				Description: product.Description,
-				Price:       v.Price,
+				Price:       p.Price,
+				Quantity:    p.Quantity,
+				SubTotal:    subtotal,
 				MainImage: &web.ImageResponse{
 					Id:       product.MainImage.Id.Hex(),
 					FileName: product.MainImage.FileName,
 					URL:      product.MainImage.URL,
 				},
-				Quantity: v.Quantity,
 			})
 		}
 
-		orders = append(orders, &web.OrderResponse{
-			Id:        order.Id.Hex(),
-			CreatedAt: order.CreatedAt,
-			UpdatedAt: order.UpdatedAt,
-			Products:  productsResponse,
+		transactionResponse = append(transactionResponse, &web.TransactionDetailResponse{
+			Id:         v.Id.Hex(),
+			CreatedAt:  v.CreatedAt,
+			UpdatedAt:  v.UpdatedAt,
+			Status:     v.Status,
+			QRCode:     v.QRCode,
+			TotalPrice: totalPrice,
+			Products:   productResponse,
 			Address: &web.AddressResponse{
-				Address:    order.Address.Address,
-				City:       order.Address.City,
-				Province:   order.Address.Province,
-				Country:    order.Address.Country,
-				PostalCode: order.Address.PostalCode,
-				Latitude:   order.Address.Latitude,
-				Longitude:  order.Address.Longitude,
+				Address:    v.Address.Address,
+				City:       v.Address.City,
+				Province:   v.Address.Province,
+				Country:    v.Address.Country,
+				PostalCode: v.Address.PostalCode,
 			},
 		})
 	}
 
-	return web.CustomerOrdersResponse{
-		CustomerId: customer.Id.Hex(),
-		Orders:     orders,
+	return web.TransactionResponse{
+		CustomerId:   customer.Id.Hex(),
+		Transactions: transactionResponse,
 	}
+}
+
+func (service *customerServiceImpl) FindOrderById(ctx context.Context, customerId string) web.OrderResponse {
+	customer, err := service.CustomerRepository.FindById(ctx, customerId)
+	helper.PanicIfError(err)
+
+	var productResponse []*web.OrderProductResponse
+	for _, v := range customer.Orders {
+		product, err := service.ProductRepository.FindById(ctx, v.ProductId)
+		helper.PanicIfError(err)
+		productResponse = append(productResponse, &web.OrderProductResponse{
+			Id:          v.Id.Hex(),
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			ProductId:   product.Id.Hex(),
+			Name:        product.Name,
+			Slug:        product.Slug,
+			Description: product.Description,
+			Price:       v.Price,
+			Quantity:    v.Quantity,
+			SubTotal:    v.Price * v.Quantity,
+			MainImage: &web.ImageResponse{
+				Id:       product.MainImage.Id.Hex(),
+				FileName: product.MainImage.FileName,
+				URL:      product.MainImage.URL,
+			},
+			Address: &web.AddressResponse{
+				Address:    v.Address.Address,
+				City:       v.Address.City,
+				Province:   v.Address.Province,
+				Country:    v.Address.Country,
+				PostalCode: v.Address.PostalCode,
+			},
+		})
+	}
+
+	return web.OrderResponse{
+		CustomerId: customer.Id.Hex(),
+		Products:   productResponse,
+	}
+
 }
 
 func (service *customerServiceImpl) Update(ctx context.Context, request web.CustomerUpdateRequest) web.CustomerUpdateRequest {

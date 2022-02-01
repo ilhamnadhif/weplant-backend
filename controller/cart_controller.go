@@ -31,8 +31,6 @@ func (controller *cartControllerImpl) PushProductToCart(c *gin.Context) {
 	var cartRequest web.CartProductCreateRequest
 	errBind := c.ShouldBindJSON(&cartRequest)
 	helper.PanicIfError(errBind)
-	cartRequest.CreatedAt = helper.GetTimeNow()
-	cartRequest.UpdatedAt = helper.GetTimeNow()
 	cartRequest.CustomerId = customerId
 	cartRequest.Quantity = 1
 

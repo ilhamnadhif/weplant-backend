@@ -6,6 +6,7 @@ type ProductResponse struct {
 	UpdatedAt   int                 `json:"updated_at"`
 	MerchantId  string              `json:"merchant_id"`
 	Name        string              `json:"name"`
+	Slug        string              `json:"slug"`
 	Description string              `json:"description"`
 	Price       int                 `json:"price"`
 	Stock       int                 `json:"stock"`
@@ -18,9 +19,12 @@ type ProductResponseAll struct {
 	Id          string         `json:"id"`
 	CreatedAt   int            `json:"created_at"`
 	UpdatedAt   int            `json:"updated_at"`
+	MerchantId  string         `json:"merchant_id"`
 	Name        string         `json:"name"`
+	Slug        string         `json:"slug"`
 	Description string         `json:"description"`
 	Price       int            `json:"price"`
+	Stock       int            `json:"stock"`
 	MainImage   *ImageResponse `json:"main_image"`
 }
 
@@ -33,10 +37,12 @@ type ProductCreateRequest struct {
 	UpdatedAt   int                             `json:"updated_at"`
 	MerchantId  string                          `json:"merchant_id"`
 	Name        string                          `json:"name"`
+	Slug        string                          `json:"slug"`
 	Description string                          `json:"description"`
 	Price       int                             `json:"price"`
 	Stock       int                             `json:"stock"`
 	MainImage   *ImageCreateRequest             `json:"main_image"`
+	Images      []*ImageCreateRequest           `json:"images"`
 	Categories  []*ProductCategoryCreateRequest `json:"categories"`
 }
 

@@ -3,43 +3,44 @@ package repository
 import (
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
-	"github.com/midtrans/midtrans-go/snap"
 	"os"
-	"weplant-backend/config"
 	"weplant-backend/helper"
 )
 
 type MidtransRepository interface {
-	Checkout(request snap.Request) (*snap.Response, *midtrans.Error)
+	CreateTransaction(req coreapi.ChargeReq) (*coreapi.ChargeResponse, *midtrans.Error)
+	CancelTransaction(orderId string) (*coreapi.CancelResponse, *midtrans.Error)
 	CheckTransaction(orderId string) (*coreapi.TransactionStatusResponse, *midtrans.Error)
 }
 
 type midtransRepositoryImpl struct {
+	ServerKey string
 }
 
-func NewMidtransRepository() MidtransRepository {
-	return &midtransRepositoryImpl{}
-}
-
-func (repository *midtransRepositoryImpl) Checkout(request snap.Request) (*snap.Response, *midtrans.Error) {
-	key := config.GetMidtransKey()
-
-	var s snap.Client
-	s.New(key, helper.MidtransEnvType(os.Getenv("MIDTRANS_ENV_TYPE")))
-
-	res, err := s.CreateTransaction(&request)
-	if err != nil {
-		return nil, err
+func NewMidtransRepository(serverKey string) MidtransRepository {
+	return &midtransRepositoryImpl{
+		ServerKey: serverKey,
 	}
-	return res, nil
+}
+
+func (repository *midtransRepositoryImpl) CreateTransaction(req coreapi.ChargeReq) (*coreapi.ChargeResponse, *midtrans.Error) {
+	var c coreapi.Client
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
+
+	return c.ChargeTransaction(&req)
+}
+
+func (repository *midtransRepositoryImpl) CancelTransaction(orderId string) (*coreapi.CancelResponse, *midtrans.Error) {
+	var c coreapi.Client
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
+
+	return c.CancelTransaction(orderId)
 }
 
 func (repository *midtransRepositoryImpl) CheckTransaction(orderId string) (*coreapi.TransactionStatusResponse, *midtrans.Error) {
-	key := config.GetMidtransKey()
 
 	var c coreapi.Client
-	c.New(key, helper.MidtransEnvType(os.Getenv("MIDTRANS_ENV_TYPE")))
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
 
 	return c.CheckTransaction(orderId)
 }
-

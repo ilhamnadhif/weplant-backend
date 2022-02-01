@@ -7,9 +7,11 @@ type ImageResponse struct {
 }
 
 type ImageCreateRequest struct {
-	FileName string `json:"file_name"`
+	FileName string      `json:"file_name"`
+	URL      interface{} `json:"url"`
 }
 
 type ImageUpdateRequest struct {
-	FileName string `json:"file_name"`
+	FileName string      `json:"file_name"`
+	URL      interface{} `json:"url"`
 }

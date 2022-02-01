@@ -11,6 +11,7 @@ func PanicIfError(err error) {
 	}
 }
 
+
 func IfValidationError(err error) []string {
 	var errors []string
 	for _, e := range err.(validator.ValidationErrors) {
