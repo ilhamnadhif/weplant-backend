@@ -45,10 +45,12 @@ func (controller *categoryControllerImpl) Create(c *gin.Context) {
 		CreatedAt: helper.GetTimeNow(),
 		UpdatedAt: helper.GetTimeNow(),
 		Name:      name,
+		Slug:      helper.SlugGenerate(name),
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
+			URL: src,
 		},
-	}, src)
+	})
 	c.JSON(http.StatusCreated, web.WebResponse{
 		Code:   http.StatusCreated,
 		Status: "CREATED",
@@ -115,8 +117,9 @@ func (controller *categoryControllerImpl) UpdateMainImage(c *gin.Context) {
 		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
+			URL: src,
 		},
-	}, src)
+	})
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

@@ -16,12 +16,19 @@ type ProductRepository interface {
 	FindById(ctx context.Context, productId string) (domain.Product, error)
 	FindAll(ctx context.Context) ([]domain.Product, error)
 	Update(ctx context.Context, product domain.Product) (domain.Product, error)
-	PushImageIntoImages(ctx context.Context, productId string, image domain.Image) (domain.Image, error)
+	PushImageIntoImages(ctx context.Context, productId string, images []domain.Image) ([]domain.Image, error)
 	PullImageFromImages(ctx context.Context, productId string, imageId string) (domain.Image, error)
 	Delete(ctx context.Context, productId string) error
 
+	// merchant
+	FindByMerchantId(ctx context.Context, merchantId string) ([]domain.Product, error)
+
+	// category
 	FindByCategoryId(ctx context.Context, categoryId string) ([]domain.Product, error)
 	PullCategoryIdFromProduct(ctx context.Context, categoryId string) error
+
+	// transaction
+	UpdateQuantity(ctx context.Context, product domain.Product) error
 }
 type productRepositoryImpl struct {
 	Collection *mongo.Collection
@@ -73,19 +80,25 @@ func (repository *productRepositoryImpl) Update(ctx context.Context, product dom
 	return product, nil
 }
 
-func (repository *productRepositoryImpl) PushImageIntoImages(ctx context.Context, productId string, image domain.Image) (domain.Image, error) {
+func (repository *productRepositoryImpl) PushImageIntoImages(ctx context.Context, productId string, images []domain.Image) ([]domain.Image, error) {
 	objectId := helper.ObjectIDFromHex(productId)
 	_, err := repository.Collection.UpdateByID(ctx, objectId, bson.D{
 		{
-			"$addToSet", bson.D{{
-				"images", image,
-			}},
+			"$push", bson.D{
+			{
+				"images", bson.D{
+				{
+					"$each", images,
+				},
+			},
+			},
+		},
 		},
 	})
 	if err != nil {
-		return image, err
+		return images, err
 	}
-	return image, nil
+	return images, nil
 }
 
 func (repository *productRepositoryImpl) PullImageFromImages(ctx context.Context, productId string, imageId string) (domain.Image, error) {
@@ -98,22 +111,22 @@ func (repository *productRepositoryImpl) PullImageFromImages(ctx context.Context
 	err := repository.Collection.FindOneAndUpdate(ctx, bson.D{{"_id", objectProductId}}, bson.D{
 		{
 			"$pull", bson.D{
-				{
-					"images", bson.D{
-						{"_id", objectImageId},
-					},
-				},
+			{
+				"images", bson.D{
+				{"_id", objectImageId},
 			},
+			},
+		},
 		},
 	}, options.FindOneAndUpdate().SetProjection(bson.D{
 		{
 			"images", bson.D{
-				{
-					"$elemMatch", bson.D{
-						{"_id", objectImageId},
-					},
-				},
+			{
+				"$elemMatch", bson.D{
+				{"_id", objectImageId},
 			},
+			},
+		},
 		},
 	})).Decode(&product)
 	if err != nil {
@@ -143,7 +156,23 @@ func (repository *productRepositoryImpl) Delete(ctx context.Context, productId s
 	return nil
 }
 
-//
+// merchant
+func (repository *productRepositoryImpl) FindByMerchantId(ctx context.Context, merchantId string) ([]domain.Product, error) {
+	var products []domain.Product
+	cursor, err := repository.Collection.Find(ctx, bson.D{
+		{"merchant_id", merchantId},
+	})
+	if err != nil {
+		return products, err
+	}
+	errBind := cursor.All(ctx, &products)
+	if errBind != nil {
+		return products, errBind
+	}
+	return products, nil
+}
+
+// category
 func (repository *productRepositoryImpl) FindByCategoryId(ctx context.Context, categoryId string) ([]domain.Product, error) {
 	var products []domain.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{
@@ -167,12 +196,29 @@ func (repository *productRepositoryImpl) PullCategoryIdFromProduct(ctx context.C
 	_, err := repository.Collection.UpdateMany(ctx, bson.D{}, bson.D{
 		{
 			"$pull", bson.D{
-				{
-					"categories", bson.D{
-						{"category_id", categoryId},
-					},
-				},
+			{
+				"categories", bson.D{
+				{"category_id", categoryId},
 			},
+			},
+		},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// transaction
+func (repository *productRepositoryImpl) UpdateQuantity(ctx context.Context, product domain.Product) error {
+	_, err := repository.Collection.UpdateByID(ctx, product.Id, bson.D{
+		{
+			"$inc", bson.D{
+			{
+				"stock", product.Stock,
+			},
+		},
 		},
 	})
 	if err != nil {

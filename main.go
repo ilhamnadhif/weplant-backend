@@ -31,6 +31,9 @@ func main() {
 	// cloudinary get cloud
 	cloud := config.GetCloud()
 
+	// get xendit key
+	midtransKey := config.GetMidtransKey()
+
 	// collection
 	merchantCollection := database.Collection("merchant")
 	merchantCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
@@ -39,18 +42,18 @@ func main() {
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys:    bson.D{{Key: "name", Value: 1}},
+			Keys:    bson.D{{Key: "slug", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
 	})
 	categoryCollection := database.Collection("category")
 	categoryCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    bson.D{{Key: "name", Value: 1}},
+		Keys:    bson.D{{Key: "slug", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 	productCollection := database.Collection("product")
 	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    bson.D{{Key: "name", Value: 1}},
+		Keys:    bson.D{{Key: "slug", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 	customerCollection := database.Collection("customer")
@@ -65,31 +68,31 @@ func main() {
 	})
 
 	// repository
-	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
-	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	categoryRepository := repository.NewCategoryRepository(categoryCollection)
+	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	productRepository := repository.NewProductRepository(productCollection)
 	customerRepository := repository.NewCustomerRepository(customerCollection)
-	midtransRepository := repository.NewMidtransRepository()
 	adminRepository := repository.NewAdminRepository(adminCollection)
+	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
+	midtransRepository := repository.NewMidtransRepository(midtransKey)
 
 	// service
-	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
 	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
+	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
 	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository, customerRepository)
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
-	orderService := service.NewOrderService(customerRepository, productRepository, midtransRepository, merchantRepository)
+	transactionService := service.NewTransactionService(customerRepository, productRepository, midtransRepository, merchantRepository)
 	jwtService := service.NewJWTService()
 	authService := service.NewAuthService(merchantRepository, customerRepository, adminRepository)
 
 	// controller
-	merchantController := controller.NewMerchantController(merchantService)
 	categoryController := controller.NewCategoryController(categoryService)
+	merchantController := controller.NewMerchantController(merchantService)
 	productController := controller.NewProductController(productService)
 	customerController := controller.NewCustomerController(customerService)
 	cartController := controller.NewCartController(cartService)
-	orderController := controller.NewOrderController(orderService)
+	transactionController := controller.NewTransactionController(transactionService)
 	authController := controller.NewAuthController(authService, jwtService)
 
 	// middleware
@@ -122,15 +125,6 @@ func main() {
 	// router
 	v1 := r.Group("/api/v1")
 
-	merchantRouter := v1.Group("/merchants")
-	merchantRouter.POST("/", merchantController.Create)
-	merchantRouter.GET("/:merchantId", merchantController.FindById)
-	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
-	merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
-	merchantRouter.PUT("/:merchantId", merchantController.Update)
-	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
-	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
-
 	categoryRouter := v1.Group("/categories")
 	categoryRouter.GET("/:categoryId", categoryController.FindById)
 	categoryRouter.GET("/", categoryController.FindAll)
@@ -139,6 +133,15 @@ func main() {
 	categoryRouter.PUT("/:categoryId", categoryController.Update)
 	categoryRouter.PATCH("/:categoryId/image", categoryController.UpdateMainImage)
 	categoryRouter.DELETE("/:categoryId", categoryController.Delete)
+
+	merchantRouter := v1.Group("/merchants")
+	merchantRouter.POST("/", merchantController.Create)
+	merchantRouter.GET("/:merchantId", merchantController.FindById)
+	merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
+	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
+	merchantRouter.PUT("/:merchantId", merchantController.Update)
+	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
+	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
 
 	productRouter := v1.Group("/products")
 	productRouter.GET("/:productId", productController.FindById)
@@ -154,9 +157,10 @@ func main() {
 	customerRouter := v1.Group("/customers")
 	customerRouter.POST("/", customerController.Create)
 	customerRouter.GET("/:customerId", customerController.FindById)
-	customerRouter.GET("/:customerId/cart", customerController.FindCartById)
-	customerRouter.GET("/:customerId/order", customerController.FindOrderById)
 	customerRouter.Use(authMiddleware.AuthJWT("customer"))
+	customerRouter.GET("/:customerId/carts", customerController.FindCartById)
+	customerRouter.GET("/:customerId/transactions", customerController.FindTransactionById)
+	customerRouter.GET("/:customerId/orders", customerController.FindOrderById)
 	customerRouter.PUT("/:customerId", customerController.Update)
 	customerRouter.DELETE("/:customerId", customerController.Delete)
 
@@ -166,10 +170,11 @@ func main() {
 	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
 	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
 
-	orderRouter := v1.Group("/orders")
-	orderRouter.POST("/callback", orderController.CallbackTransaction)
-	orderRouter.Use(authMiddleware.AuthJWT("customer"))
-	orderRouter.POST("/:customerId", orderController.CheckoutFromCart)
+	transactionRouter := v1.Group("/transactions")
+	transactionRouter.POST("/callback", transactionController.Callback)
+	transactionRouter.Use(authMiddleware.AuthJWT("customer"))
+	transactionRouter.POST("/:customerId", transactionController.Create)
+	transactionRouter.DELETE("/:customerId/transactions/:transactionId", transactionController.Cancel)
 
 	authRouter := v1.Group("/auth")
 	authRouter.POST("/merchant", authController.LoginMerchant)

@@ -46,6 +46,7 @@ func (service *authServiceImpl) LoginMerchant(ctx context.Context, request web.L
 	if !helper.CheckPasswordHash(request.Password, merchant.Password) {
 		panic(errors.New("password not match").Error())
 	}
+
 	return web.LoginResponse{
 		Id:    merchant.Id.Hex(),
 		Role:  "merchant",

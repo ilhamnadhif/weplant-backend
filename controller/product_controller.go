@@ -37,23 +37,39 @@ func (controller *productControllerImpl) Create(c *gin.Context) {
 	merchantId := c.PostForm("merchant_id")
 	name := c.PostForm("name")
 	description := c.PostForm("description")
-	price, errPrice := strconv.Atoi(c.PostForm("price"))
-	helper.PanicIfError(errPrice)
-	stock, errStock:= strconv.Atoi(c.PostForm("stock"))
-	helper.PanicIfError(errStock)
+	price, err := strconv.Atoi(c.PostForm("price"))
+	helper.PanicIfError(err)
+	stock, err := strconv.Atoi(c.PostForm("stock"))
+	helper.PanicIfError(err)
 	categories := c.PostFormArray("categories")
 
-	image, errorFormFile := c.FormFile("image")
-
+	// main image
+	image, err := c.FormFile("image")
+	helper.PanicIfError(err)
 	if image == nil {
 		panic(errors.New("no file").Error())
 	}
 	src, err := image.Open()
 	helper.PanicIfError(err)
 	defer src.Close()
-
-	helper.PanicIfError(errorFormFile)
 	filename := helper.GetFileName(image.Filename)
+
+	// images
+	form, err := c.MultipartForm()
+	helper.PanicIfError(err)
+	images := form.File["images"]
+
+	var imagesCreateRequest []*web.ImageCreateRequest
+	for _, img := range images {
+		file, err := img.Open()
+		helper.PanicIfError(err)
+		file.Close()
+		filename := helper.GetFileName(img.Filename)
+		imagesCreateRequest = append(imagesCreateRequest, &web.ImageCreateRequest{
+			FileName: filename,
+			URL:      file,
+		})
+	}
 
 	var categoriesCreateRequest []*web.ProductCategoryCreateRequest
 	for _, category := range categories {
@@ -67,14 +83,17 @@ func (controller *productControllerImpl) Create(c *gin.Context) {
 		UpdatedAt:   helper.GetTimeNow(),
 		MerchantId:  merchantId,
 		Name:        name,
+		Slug:        helper.SlugGenerate(name),
 		Description: description,
 		Price:       price,
-		Stock: stock,
+		Stock:       stock,
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
+			URL:      src,
 		},
+		Images:     imagesCreateRequest,
 		Categories: categoriesCreateRequest,
-	}, src)
+	})
 
 	c.JSON(http.StatusCreated, web.WebResponse{
 		Code:   http.StatusCreated,
@@ -143,8 +162,9 @@ func (controller *productControllerImpl) UpdateMainImage(c *gin.Context) {
 		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
+			URL:      src,
 		},
-	}, src)
+	})
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",
@@ -173,16 +193,19 @@ func (controller *productControllerImpl) PushImageIntoImages(c *gin.Context) {
 	helper.PanicIfError(errorMultipartForm)
 	images := form.File["images"]
 
+	var imageCreateRequest []web.ImageCreateRequest
 	for _, image := range images {
 		src, err := image.Open()
 		helper.PanicIfError(err)
-		defer src.Close()
+		src.Close()
 		filename := helper.GetFileName(image.Filename)
-		controller.ProductService.PushImageIntoImages(ctx, id, web.ImageCreateRequest{
+		imageCreateRequest = append(imageCreateRequest, web.ImageCreateRequest{
 			FileName: filename,
-		}, src)
+			URL:      src,
+		})
 	}
 
+	controller.ProductService.PushImageIntoImages(ctx, id, imageCreateRequest)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

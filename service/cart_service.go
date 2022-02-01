@@ -30,16 +30,14 @@ func (service *cartServiceImpl) PushProductToCart(ctx context.Context, request w
 	customer, err := service.CustomerRepository.FindById(ctx, request.CustomerId)
 	helper.PanicIfError(err)
 
-	product, errProduct := service.ProductRepository.FindById(ctx, request.ProductId)
-	helper.PanicIfError(errProduct)
+	product, err := service.ProductRepository.FindById(ctx, request.ProductId)
+	helper.PanicIfError(err)
 
-	errPush := service.CustomerRepository.PushProductToCart(ctx, customer.Id.Hex(), domain.CartProduct{
-		CreatedAt: request.CreatedAt,
-		UpdatedAt: request.UpdatedAt,
+	err = service.CustomerRepository.PushProductToCart(ctx, customer.Id.Hex(), domain.CartProduct{
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
 	})
-	helper.PanicIfError(errPush)
+	helper.PanicIfError(err)
 	return request
 }
 
@@ -47,11 +45,10 @@ func (service *cartServiceImpl) UpdateProductQuantity(ctx context.Context, reque
 	customer, err := service.CustomerRepository.FindById(ctx, request.CustomerId)
 	helper.PanicIfError(err)
 
-	product, errProduct := service.ProductRepository.FindById(ctx, request.ProductId)
-	helper.PanicIfError(errProduct)
+	product, err := service.ProductRepository.FindById(ctx, request.ProductId)
+	helper.PanicIfError(err)
 
 	errUpdate := service.CustomerRepository.UpdateProductQuantity(ctx, customer.Id.Hex(), domain.CartProduct{
-		UpdatedAt: request.UpdatedAt,
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
 	})
@@ -64,8 +61,8 @@ func (service *cartServiceImpl) PullProductFromCart(ctx context.Context, custome
 	customer, err := service.CustomerRepository.FindById(ctx, customerId)
 	helper.PanicIfError(err)
 
-	product, errProduct := service.ProductRepository.FindById(ctx, productId)
-	helper.PanicIfError(errProduct)
+	product, err := service.ProductRepository.FindById(ctx, productId)
+	helper.PanicIfError(err)
 
 	for _, prdct := range customer.Carts {
 		if prdct.ProductId == product.Id.Hex() {

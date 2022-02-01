@@ -12,6 +12,7 @@ type CustomerController interface {
 	Create(c *gin.Context)
 	FindById(c *gin.Context)
 	FindCartById(c *gin.Context)
+	FindTransactionById(c *gin.Context)
 	FindOrderById(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
@@ -62,6 +63,18 @@ func (controller *customerControllerImpl) FindCartById(c *gin.Context) {
 	id := c.Param("customerId")
 
 	res := controller.CustomerService.FindCartById(ctx, id)
+	c.JSON(http.StatusOK, web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	})
+}
+
+func (controller *customerControllerImpl) FindTransactionById(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("customerId")
+
+	res := controller.CustomerService.FindTransactionById(ctx, id)
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

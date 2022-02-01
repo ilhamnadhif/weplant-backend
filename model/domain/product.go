@@ -12,6 +12,7 @@ type Product struct {
 	UpdatedAt   int                `bson:"updated_at,omitempty"`
 	MerchantId  string             `bson:"merchant_id,omitempty"`
 	Name        string             `bson:"name,omitempty"`
+	Slug        string             `bson:"slug"`
 	Description string             `bson:"description,omitempty"`
 	Price       int                `bson:"price,omitempty"`
 	Stock       int                `bson:"stock,omitempty"`

@@ -3,7 +3,6 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 	"weplant-backend/helper"
 	"weplant-backend/model/web"
 	"weplant-backend/service"
@@ -40,10 +39,6 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 	province := c.PostForm("province")
 	country := c.PostForm("country")
 	postalCode := c.PostForm("postal_code")
-	latitude, err := strconv.ParseFloat(c.PostForm("latitude"), 64)
-	helper.PanicIfError(err)
-	longitude, err := strconv.ParseFloat(c.PostForm("longitude"), 64)
-	helper.PanicIfError(err)
 
 	image, errorFormFile := c.FormFile("image")
 
@@ -60,9 +55,11 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 		Email:     email,
 		Password:  password,
 		Name:      name,
+		Slug:      helper.SlugGenerate(name),
 		Phone:     phone,
 		MainImage: &web.ImageCreateRequest{
 			FileName: filename,
+			URL:      src,
 		},
 		Address: &web.AddressCreateRequest{
 			Address:    address,
@@ -70,10 +67,8 @@ func (controller *merchantControllerImpl) Create(c *gin.Context) {
 			Province:   province,
 			Country:    country,
 			PostalCode: postalCode,
-			Latitude:   latitude,
-			Longitude:  longitude,
 		},
-	}, src)
+	})
 	c.JSON(http.StatusCreated, web.WebResponse{
 		Code:   http.StatusCreated,
 		Status: "CREATED",
@@ -141,8 +136,9 @@ func (controller *merchantControllerImpl) UpdateMainImage(c *gin.Context) {
 		UpdatedAt: helper.GetTimeNow(),
 		MainImage: &web.ImageUpdateRequest{
 			FileName: filename,
+			URL:      src,
 		},
-	}, src)
+	})
 	c.JSON(http.StatusOK, web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",

@@ -9,8 +9,9 @@ type Merchant struct {
 	Email     string                `bson:"email,omitempty"`
 	Password  string                `bson:"password,omitempty"`
 	Name      string                `bson:"name,omitempty"`
+	Slug      string                `bson:"slug"`
 	Phone     string                `bson:"phone,omitempty"`
-	Balance   int                   `bson:"balance,omitempty"`
+	Balance   int64                 `bson:"balance,omitempty"`
 	MainImage *Image                `bson:"main_image,omitempty"`
 	Orders    []*ManageOrderProduct `bson:"orders,omitempty"`
 	Address   *Address              `bson:"address,omitempty"`

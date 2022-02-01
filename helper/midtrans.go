@@ -6,24 +6,26 @@ import (
 	"github.com/midtrans/midtrans-go/coreapi"
 )
 
-func CheckTransactionStatus(response coreapi.TransactionStatusResponse) bool {
+func CheckTransactionStatus(response coreapi.TransactionStatusResponse) string {
 	if response.TransactionStatus == "capture" {
 		if response.FraudStatus == "accept" {
-			return true
+			return "success"
 		} else {
-			return false
+			return "failed"
 		}
 	} else if response.TransactionStatus == "settlement" {
-		return true
+		return "success"
+	} else if response.TransactionStatus == "pending" {
+		return "pending"
 	} else {
-		return false
+		return "failed"
 	}
 }
 
 func MidtransEnvType(env string) midtrans.EnvironmentType {
 	if env == "production" {
 		return midtrans.Production
-	} else if env == "sandbox" {
+	} else if env == "developer" {
 		return midtrans.Sandbox
 	} else {
 		panic(errors.New("Error Env Type").Error())
