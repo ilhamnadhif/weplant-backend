@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"embed"
+	_ "embed"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"io/fs"
 	"net/http"
 	"weplant-backend/config"
 	"weplant-backend/controller"
@@ -19,8 +22,15 @@ import (
 	"weplant-backend/service"
 )
 
+//go:embed swagger
+var spec embed.FS
+
 func main() {
-	err := godotenv.Load()
+
+	apispec, err := fs.Sub(spec, "swagger")
+	helper.PanicIfError(err)
+
+	err = godotenv.Load()
 	if err != nil {
 		helper.PanicIfError(err)
 	}
@@ -96,7 +106,7 @@ func main() {
 	authController := controller.NewAuthController(authService, jwtService)
 
 	// middleware
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	_ = middleware.NewAuthMiddleware(jwtService)
 
 	// create admin
 	res, err := adminRepository.FindAll(context.Background())
@@ -122,13 +132,23 @@ func main() {
 		})
 	}))
 
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, web.WebResponse{
+			Code:   http.StatusNotFound,
+			Status: "NOT FOUND",
+			Data:   "page not found",
+		})
+	})
+
+	r.StaticFS("/docs", http.FS(apispec))
+
 	// router
 	v1 := r.Group("/api/v1")
 
 	categoryRouter := v1.Group("/categories")
 	categoryRouter.GET("/:categoryId", categoryController.FindById)
 	categoryRouter.GET("/", categoryController.FindAll)
-	categoryRouter.Use(authMiddleware.AuthJWT("admin"))
+	//categoryRouter.Use(authMiddleware.AuthJWT("admin"))
 	categoryRouter.POST("/", categoryController.Create)
 	categoryRouter.PUT("/:categoryId", categoryController.Update)
 	categoryRouter.PATCH("/:categoryId/image", categoryController.UpdateMainImage)
@@ -137,7 +157,7 @@ func main() {
 	merchantRouter := v1.Group("/merchants")
 	merchantRouter.POST("/", merchantController.Create)
 	merchantRouter.GET("/:merchantId", merchantController.FindById)
-	merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
+	//merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
 	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
 	merchantRouter.PUT("/:merchantId", merchantController.Update)
 	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
@@ -146,7 +166,7 @@ func main() {
 	productRouter := v1.Group("/products")
 	productRouter.GET("/:productId", productController.FindById)
 	productRouter.GET("/", productController.FindAll)
-	productRouter.Use(authMiddleware.AuthJWT("merchant"))
+	//productRouter.Use(authMiddleware.AuthJWT("merchant"))
 	productRouter.POST("/", productController.Create)
 	productRouter.PUT("/:productId", productController.Update)
 	productRouter.PATCH("/:productId/image", productController.UpdateMainImage)
@@ -157,7 +177,7 @@ func main() {
 	customerRouter := v1.Group("/customers")
 	customerRouter.POST("/", customerController.Create)
 	customerRouter.GET("/:customerId", customerController.FindById)
-	customerRouter.Use(authMiddleware.AuthJWT("customer"))
+	//customerRouter.Use(authMiddleware.AuthJWT("customer"))
 	customerRouter.GET("/:customerId/carts", customerController.FindCartById)
 	customerRouter.GET("/:customerId/transactions", customerController.FindTransactionById)
 	customerRouter.GET("/:customerId/orders", customerController.FindOrderById)
@@ -165,14 +185,14 @@ func main() {
 	customerRouter.DELETE("/:customerId", customerController.Delete)
 
 	cartRouter := v1.Group("/carts")
-	cartRouter.Use(authMiddleware.AuthJWT("customer"))
+	//cartRouter.Use(authMiddleware.AuthJWT("customer"))
 	cartRouter.POST("/:customerId", cartController.PushProductToCart)
 	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
 	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
 
 	transactionRouter := v1.Group("/transactions")
 	transactionRouter.POST("/callback", transactionController.Callback)
-	transactionRouter.Use(authMiddleware.AuthJWT("customer"))
+	//transactionRouter.Use(authMiddleware.AuthJWT("customer"))
 	transactionRouter.POST("/:customerId", transactionController.Create)
 	transactionRouter.DELETE("/:customerId/transactions/:transactionId", transactionController.Cancel)
 

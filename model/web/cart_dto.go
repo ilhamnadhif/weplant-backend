@@ -12,7 +12,7 @@ type CartProductResponse struct {
 }
 
 type CartResponse struct {
-	CustomerId string                 `json:"user_id"`
+	CustomerId string                 `json:"customer_id"`
 	TotalPrice int                    `json:"total_price"`
 	Products   []*CartProductResponse `json:"products"`
 }

@@ -73,6 +73,29 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 	res, err := service.MerchantRepository.FindById(ctx, merchantId)
 	helper.PanicIfError(err)
 
+	product, err := service.ProductRepository.FindByMerchantId(ctx, res.Id.Hex())
+	helper.PanicIfError(err)
+
+	var productResp []*web.ProductResponseAll
+	for _, p := range product{
+		productResp = append(productResp, &web.ProductResponseAll{
+			Id:          p.Id.Hex(),
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
+			MerchantId:  p.MerchantId,
+			Name:        p.Name,
+			Slug:        p.Slug,
+			Description: p.Description,
+			Price:       p.Price,
+			Stock:       p.Stock,
+			MainImage:   &web.ImageResponse{
+				Id:       p.MainImage.Id.Hex(),
+				FileName: p.MainImage.FileName,
+				URL:      p.MainImage.URL,
+			},
+		})
+	}
+
 	return web.MerchantResponse{
 		Id:        res.Id.Hex(),
 		CreatedAt: res.CreatedAt,
@@ -94,6 +117,7 @@ func (service *merchantServiceImpl) FindById(ctx context.Context, merchantId str
 			Country:    res.Address.Country,
 			PostalCode: res.Address.PostalCode,
 		},
+		Products: productResp,
 	}
 }
 
