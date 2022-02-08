@@ -1,0 +1,129 @@
+package controller
+
+import (
+	"github.com/julienschmidt/httprouter"
+	"net/http"
+	"weplant-backend/helper"
+	"weplant-backend/model/web"
+	"weplant-backend/service"
+)
+
+type CategoryControllerImpl struct {
+	CategoryService service.CategoryService
+}
+
+func NewCategoryController(categoryService service.CategoryService) CategoryController {
+	return &CategoryControllerImpl{
+		CategoryService: categoryService,
+	}
+}
+
+func (controller *CategoryControllerImpl) Create(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+
+	name := request.PostFormValue("name")
+	file, fileHeader, errFileImage := request.FormFile("image")
+	helper.PanicIfError(errFileImage)
+
+	filename := helper.GetFileName(fileHeader.Filename)
+
+	res := controller.CategoryService.Create(ctx, web.CategoryCreateRequest{
+		CreatedAt: helper.GetTimeNow(),
+		UpdatedAt: helper.GetTimeNow(),
+		Name:      name,
+		Slug:      helper.SlugGenerate(name),
+		MainImage: &web.ImageCreateRequest{
+			FileName: filename,
+			URL:      file,
+		},
+	})
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
+func (controller *CategoryControllerImpl) FindById(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+	categoryId := params.ByName("categoryId")
+
+	res := controller.CategoryService.FindById(ctx, categoryId)
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
+func (controller *CategoryControllerImpl) FindAll(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+
+	res := controller.CategoryService.FindAll(ctx)
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
+func (controller *CategoryControllerImpl) Update(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+
+	categoryId := params.ByName("categoryId")
+
+	var categoryUpdateRequest web.CategoryUpdateRequest
+
+	helper.ReadFromRequestBody(request, &categoryUpdateRequest)
+	categoryUpdateRequest.Id = categoryId
+	categoryUpdateRequest.UpdatedAt = helper.GetTimeNow()
+
+	res := controller.CategoryService.Update(ctx, categoryUpdateRequest)
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
+func (controller *CategoryControllerImpl) UpdateMainImage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+	categoryId := params.ByName("categoryId")
+
+	file, fileHeader, err := request.FormFile("image")
+	helper.PanicIfError(err)
+
+	filename := helper.GetFileName(fileHeader.Filename)
+
+	res := controller.CategoryService.UpdateMainImage(ctx, web.CategoryUpdateImageRequest{
+		Id:        categoryId,
+		UpdatedAt: helper.GetTimeNow(),
+		MainImage: &web.ImageUpdateRequest{
+			FileName: filename,
+			URL:      file,
+		},
+	})
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
+func (controller *CategoryControllerImpl) Delete(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+	categoryId := params.ByName("categoryId")
+
+	controller.CategoryService.Delete(ctx, categoryId)
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   nil,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}

@@ -1,0 +1,177 @@
+package service
+
+import (
+	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"weplant-backend/helper"
+	"weplant-backend/model/domain"
+	"weplant-backend/model/web"
+	"weplant-backend/repository"
+)
+
+type CategoryServiceImpl struct {
+	CategoryRepository   repository.CategoryRepository
+	CloudinaryRepository repository.CloudinaryRepository
+	ProductRepository    repository.ProductRepository
+}
+
+func NewCategoryService(categoryRepository repository.CategoryRepository, cloudinaryRepository repository.CloudinaryRepository, productRepository repository.ProductRepository) CategoryService {
+	return &CategoryServiceImpl{
+		CategoryRepository:   categoryRepository,
+		CloudinaryRepository: cloudinaryRepository,
+		ProductRepository:    productRepository,
+	}
+}
+
+func (service *CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryResponse {
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
+	helper.PanicIfError(err)
+
+	res, err := service.CategoryRepository.Create(ctx, domain.Category{
+		CreatedAt: request.CreatedAt,
+		UpdatedAt: request.UpdatedAt,
+		Name:      request.Name,
+		Slug:      request.Slug,
+		MainImage: &domain.Image{
+			Id:       primitive.NewObjectID(),
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	})
+	if err != nil {
+		err := service.CloudinaryRepository.DeleteImage(ctx, request.MainImage.FileName)
+		helper.PanicIfError(err)
+		panic(err.Error())
+	}
+
+	return web.CategoryResponse{
+		Id:        res.Id.Hex(),
+		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
+		Name:      res.Name,
+		Slug:      res.Slug,
+		MainImage: &web.ImageResponse{
+			Id:       res.MainImage.Id.Hex(),
+			FileName: res.MainImage.FileName,
+			URL:      res.MainImage.URL,
+		},
+	}
+}
+
+func (service *CategoryServiceImpl) FindById(ctx context.Context, categoryId string) web.CategoryResponseWithProduct {
+	category, err := service.CategoryRepository.FindById(ctx, categoryId)
+	helper.PanicIfErrorNotFound(err)
+
+	products, err := service.ProductRepository.FindByCategoryId(ctx, category.Id.Hex())
+	helper.PanicIfError(err)
+
+	var productsResponse []web.ProductResponseAll
+	for _, product := range products {
+		productsResponse = append(productsResponse, web.ProductResponseAll{
+			Id:          product.Id.Hex(),
+			CreatedAt:   product.CreatedAt,
+			UpdatedAt:   product.UpdatedAt,
+			MerchantId:  product.MerchantId,
+			Name:        product.Name,
+			Slug:        product.Slug,
+			Description: product.Description,
+			Price:       product.Price,
+			Stock:       product.Stock,
+			MainImage: &web.ImageResponse{
+				Id:       product.MainImage.Id.Hex(),
+				FileName: product.MainImage.FileName,
+				URL:      product.MainImage.URL,
+			},
+		})
+	}
+
+	return web.CategoryResponseWithProduct{
+		Id:        category.Id.Hex(),
+		CreatedAt: category.CreatedAt,
+		UpdatedAt: category.UpdatedAt,
+		Name:      category.Name,
+		Slug:      category.Slug,
+		MainImage: &web.ImageResponse{
+			Id:       category.MainImage.Id.Hex(),
+			FileName: category.MainImage.FileName,
+			URL:      category.MainImage.URL,
+		},
+		Products: productsResponse,
+	}
+}
+
+func (service *CategoryServiceImpl) FindAll(ctx context.Context) []web.CategoryResponse {
+	categories, err := service.CategoryRepository.FindAll(ctx)
+	helper.PanicIfError(err)
+
+	var categoriesResponse []web.CategoryResponse
+	for _, category := range categories {
+		categoriesResponse = append(categoriesResponse, web.CategoryResponse{
+			Id:        category.Id.Hex(),
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+			Name:      category.Name,
+			Slug:      category.Slug,
+			MainImage: &web.ImageResponse{
+				Id:       category.MainImage.Id.Hex(),
+				FileName: category.MainImage.FileName,
+				URL:      category.MainImage.URL,
+			},
+		})
+	}
+	return categoriesResponse
+}
+
+func (service *CategoryServiceImpl) Update(ctx context.Context, request web.CategoryUpdateRequest) web.CategoryUpdateRequest {
+	category, err := service.CategoryRepository.FindById(ctx, request.Id)
+	helper.PanicIfErrorNotFound(err)
+
+	_, err = service.CategoryRepository.Update(ctx, domain.Category{
+		Id:        category.Id,
+		UpdatedAt: request.UpdatedAt,
+		Name:      request.Name,
+		Slug:      category.Slug,
+	})
+	helper.PanicIfError(err)
+	return request
+}
+
+func (service *CategoryServiceImpl) UpdateMainImage(ctx context.Context, request web.CategoryUpdateImageRequest) web.CategoryUpdateImageRequest {
+	category, err := service.CategoryRepository.FindById(ctx, request.Id)
+	helper.PanicIfErrorNotFound(err)
+
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
+	helper.PanicIfError(err)
+
+	_, err = service.CategoryRepository.Update(ctx, domain.Category{
+		Id:        category.Id,
+		UpdatedAt: request.UpdatedAt,
+		Slug:      category.Slug,
+		MainImage: &domain.Image{
+			Id:       category.MainImage.Id,
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	})
+	helper.PanicIfError(err)
+
+	err = service.CloudinaryRepository.DeleteImage(ctx, category.MainImage.FileName)
+	helper.PanicIfError(err)
+
+	request.MainImage.URL = url
+	return request
+}
+
+func (service *CategoryServiceImpl) Delete(ctx context.Context, categoryId string) {
+	category, err := service.CategoryRepository.FindById(ctx, categoryId)
+	helper.PanicIfError(err)
+
+	err = service.ProductRepository.PullCategoryIdFromProduct(ctx, category.Id.Hex())
+	helper.PanicIfError(err)
+
+	err = service.CategoryRepository.Delete(ctx, category.Id.Hex())
+	helper.PanicIfError(err)
+
+	err = service.CloudinaryRepository.DeleteImage(ctx, category.MainImage.FileName)
+	helper.PanicIfError(err)
+}

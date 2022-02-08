@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"weplant-backend/exception"
 )
 
 func PanicIfError(err error) {
@@ -11,6 +12,11 @@ func PanicIfError(err error) {
 	}
 }
 
+func PanicIfErrorNotFound(err error) {
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+}
 
 func IfValidationError(err error) []string {
 	var errors []string

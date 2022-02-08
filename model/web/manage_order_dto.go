@@ -16,6 +16,6 @@ type ManageOrderProductResponse struct {
 }
 
 type ManageOrderResponse struct {
-	MerchantId string                        `json:"user_id"`
-	Products   []*ManageOrderProductResponse `json:"products"`
+	MerchantId string                       `json:"user_id"`
+	Products   []ManageOrderProductResponse `json:"products"`
 }

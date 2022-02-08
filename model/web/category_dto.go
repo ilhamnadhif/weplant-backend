@@ -10,13 +10,13 @@ type CategoryResponse struct {
 }
 
 type CategoryResponseWithProduct struct {
-	Id        string                `json:"id"`
-	CreatedAt int                   `json:"created_at"`
-	UpdatedAt int                   `json:"updated_at"`
-	Name      string                `json:"name"`
-	Slug      string                `json:"slug"`
-	MainImage *ImageResponse        `json:"main_image"`
-	Products  []*ProductResponseAll `json:"products"`
+	Id        string               `json:"id"`
+	CreatedAt int                  `json:"created_at"`
+	UpdatedAt int                  `json:"updated_at"`
+	Name      string               `json:"name"`
+	Slug      string               `json:"slug"`
+	MainImage *ImageResponse       `json:"main_image"`
+	Products  []ProductResponseAll `json:"products"`
 }
 
 type CategoryCreateRequest struct {

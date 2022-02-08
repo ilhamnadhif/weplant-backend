@@ -12,19 +12,19 @@ type TransactionProductResponse struct {
 }
 
 type TransactionDetailResponse struct {
-	Id         string `json:"id"`
-	CreatedAt  int    `json:"created_at"`
-	UpdatedAt  int    `json:"updated_at"`
-	Status     string `json:"status"`
-	QRCode     string `json:"qr_code"`
-	TotalPrice int    `json:"total_price"`
-	Products   []*TransactionProductResponse
-	Address    *AddressResponse `json:"address"`
+	Id         string                       `json:"id"`
+	CreatedAt  int                          `json:"created_at"`
+	UpdatedAt  int                          `json:"updated_at"`
+	Status     string                       `json:"status"`
+	QRCode     string                       `json:"qr_code"`
+	TotalPrice int                          `json:"total_price"`
+	Products   []TransactionProductResponse `json:"products"`
+	Address    *AddressResponse             `json:"address"`
 }
 
 type TransactionResponse struct {
-	CustomerId   string                       `json:"customer_id"`
-	Transactions []*TransactionDetailResponse `json:"transactions"`
+	CustomerId   string                      `json:"customer_id"`
+	Transactions []TransactionDetailResponse `json:"transactions"`
 }
 
 type TransactionCreateRequest struct {

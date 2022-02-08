@@ -12,9 +12,9 @@ type CartProductResponse struct {
 }
 
 type CartResponse struct {
-	CustomerId string                 `json:"customer_id"`
-	TotalPrice int                    `json:"total_price"`
-	Products   []*CartProductResponse `json:"products"`
+	CustomerId string                `json:"customer_id"`
+	TotalPrice int                   `json:"total_price"`
+	Products   []CartProductResponse `json:"products"`
 }
 
 type CartProductCreateRequest struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"embed"
 	_ "embed"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,10 +14,10 @@ import (
 	"net/http"
 	"weplant-backend/config"
 	"weplant-backend/controller"
+	"weplant-backend/exception"
 	"weplant-backend/helper"
 	"weplant-backend/middleware"
 	"weplant-backend/model/domain"
-	"weplant-backend/model/web"
 	"weplant-backend/repository"
 	"weplant-backend/service"
 )
@@ -27,7 +27,7 @@ var spec embed.FS
 
 func main() {
 
-	apispec, err := fs.Sub(spec, "swagger")
+	swagger, err := fs.Sub(spec, "swagger")
 	helper.PanicIfError(err)
 
 	err = godotenv.Load()
@@ -65,6 +65,9 @@ func main() {
 	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "slug", Value: 1}},
 		Options: options.Index().SetUnique(true),
+	})
+	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.D{{"name", "text"}},
 	})
 	customerCollection := database.Collection("customer")
 	customerCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
@@ -106,7 +109,7 @@ func main() {
 	authController := controller.NewAuthController(authService, jwtService)
 
 	// middleware
-	_ = middleware.NewAuthMiddleware(jwtService)
+	middleware2 := middleware.NewMiddleware(jwtService)
 
 	// create admin
 	res, err := adminRepository.FindAll(context.Background())
@@ -122,87 +125,58 @@ func main() {
 		helper.PanicIfError(err)
 	}
 
-	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.CustomRecovery(func(c *gin.Context, err interface{}) {
-		c.JSON(http.StatusBadRequest, web.WebResponse{
-			Code:   http.StatusBadRequest,
-			Status: "BAD REQUEST",
-			Data:   err,
-		})
-	}))
+	router := httprouter.New()
 
-	r.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, web.WebResponse{
-			Code:   http.StatusNotFound,
-			Status: "NOT FOUND",
-			Data:   "page not found",
-		})
-	})
+	router.PanicHandler = exception.ErrorHandler
+	router.ServeFiles("/docs/*filepath", http.FS(swagger))
 
-	r.StaticFS("/docs", http.FS(apispec))
+	router.GET("/api/v1/categories/:categoryId", categoryController.FindById)
+	router.GET("/api/v1/categories", categoryController.FindAll)
+	router.POST("/api/v1/categories", middleware2.AuthMiddleware(categoryController.Create, "admin"))
+	router.PUT("/api/v1/categories/:categoryId", middleware2.AuthMiddleware(categoryController.Update, "admin"))
+	router.PATCH("/api/v1/categories/:categoryId/image", middleware2.AuthMiddleware(categoryController.UpdateMainImage, "admin"))
+	router.DELETE("/api/v1/categories/:categoryId", middleware2.AuthMiddleware(categoryController.Delete, "admin"))
 
-	// router
-	v1 := r.Group("/api/v1")
+	router.POST("/api/v1/merchants", merchantController.Create)
+	router.GET("/api/v1/merchants/:merchantId", merchantController.FindById)
+	router.GET("/api/v1/merchants/:merchantId/orders", middleware2.AuthMiddleware(merchantController.FindManageOrderById, "merchant"))
+	router.PUT("/api/v1/merchants/:merchantId", middleware2.AuthMiddleware(merchantController.Update, "merchant"))
+	router.PATCH("/api/v1/merchants/:merchantId/image", middleware2.AuthMiddleware(merchantController.UpdateMainImage, "merchant"))
+	router.DELETE("/api/v1/merchants/:merchantId", middleware2.AuthMiddleware(merchantController.Delete, "merchant"))
 
-	categoryRouter := v1.Group("/categories")
-	categoryRouter.GET("/:categoryId", categoryController.FindById)
-	categoryRouter.GET("/", categoryController.FindAll)
-	//categoryRouter.Use(authMiddleware.AuthJWT("admin"))
-	categoryRouter.POST("/", categoryController.Create)
-	categoryRouter.PUT("/:categoryId", categoryController.Update)
-	categoryRouter.PATCH("/:categoryId/image", categoryController.UpdateMainImage)
-	categoryRouter.DELETE("/:categoryId", categoryController.Delete)
+	router.GET("/api/v1/products/:productId", productController.FindById)
+	router.GET("/api/v1/products", productController.FindAll)
+	router.POST("/api/v1/products", middleware2.AuthMiddleware(productController.Create, "merchant"))
+	router.PUT("/api/v1/products/:productId", middleware2.AuthMiddleware(productController.Update, "merchant"))
+	router.PATCH("/api/v1/products/:productId/image", middleware2.AuthMiddleware(productController.UpdateMainImage, "merchant"))
+	router.POST("/api/v1/products/:productId/images", middleware2.AuthMiddleware(productController.PushImageIntoImages, "merchant"))
+	router.DELETE("/api/v1/products/:productId/images/:imageId", middleware2.AuthMiddleware(productController.PullImageFromImages, "merchant"))
+	router.DELETE("/api/v1/products/:productId", middleware2.AuthMiddleware(productController.Delete, "merchant"))
 
-	merchantRouter := v1.Group("/merchants")
-	merchantRouter.POST("/", merchantController.Create)
-	merchantRouter.GET("/:merchantId", merchantController.FindById)
-	//merchantRouter.Use(authMiddleware.AuthJWT("merchant"))
-	merchantRouter.GET("/:merchantId/orders", merchantController.FindManageOrderById)
-	merchantRouter.PUT("/:merchantId", merchantController.Update)
-	merchantRouter.PATCH("/:merchantId/image", merchantController.UpdateMainImage)
-	merchantRouter.DELETE("/:merchantId", merchantController.Delete)
+	router.POST("/api/v1/customers/", customerController.Create)
+	router.GET("/api/v1/customers/:customerId", customerController.FindById)
+	router.GET("/api/v1/customers/:customerId/carts", middleware2.AuthMiddleware(customerController.FindCartById, "customer"))
+	router.GET("/api/v1/customers/:customerId/transactions", middleware2.AuthMiddleware(customerController.FindTransactionById, "customer"))
+	router.GET("/api/v1/customers/:customerId/orders", middleware2.AuthMiddleware(customerController.FindOrderById, "customer"))
+	router.PUT("/api/v1/customers/:customerId", middleware2.AuthMiddleware(customerController.Update, "customer"))
+	router.DELETE("/api/v1/customers/:customerId", middleware2.AuthMiddleware(customerController.Delete, "customer"))
 
-	productRouter := v1.Group("/products")
-	productRouter.GET("/:productId", productController.FindById)
-	productRouter.GET("/", productController.FindAll)
-	//productRouter.Use(authMiddleware.AuthJWT("merchant"))
-	productRouter.POST("/", productController.Create)
-	productRouter.PUT("/:productId", productController.Update)
-	productRouter.PATCH("/:productId/image", productController.UpdateMainImage)
-	productRouter.POST("/:productId/images", productController.PushImageIntoImages)
-	productRouter.DELETE("/:productId/images/:imageId", productController.PullImageFromImages)
-	productRouter.DELETE("/:productId", productController.Delete)
+	router.POST("/api/v1/carts/:customerId", middleware2.AuthMiddleware(cartController.PushProductToCart, "customer"))
+	router.PATCH("/api/v1/carts/:customerId/products/:productId", middleware2.AuthMiddleware(cartController.UpdateProductQuantity, "customer"))
+	router.DELETE("/api/v1/carts/:customerId/products/:productId", middleware2.AuthMiddleware(cartController.PullProductFromCart, "customer"))
 
-	customerRouter := v1.Group("/customers")
-	customerRouter.POST("/", customerController.Create)
-	customerRouter.GET("/:customerId", customerController.FindById)
-	//customerRouter.Use(authMiddleware.AuthJWT("customer"))
-	customerRouter.GET("/:customerId/carts", customerController.FindCartById)
-	customerRouter.GET("/:customerId/transactions", customerController.FindTransactionById)
-	customerRouter.GET("/:customerId/orders", customerController.FindOrderById)
-	customerRouter.PUT("/:customerId", customerController.Update)
-	customerRouter.DELETE("/:customerId", customerController.Delete)
+	router.POST("/api/v1/callback", transactionController.Callback)
+	router.POST("/api/v1/transactions/:customerId", middleware2.AuthMiddleware(transactionController.Create, "customer"))
+	router.DELETE("/api/v1/transactions/:customerId/transactions/:transactionId", middleware2.AuthMiddleware(transactionController.Cancel, "customer"))
 
-	cartRouter := v1.Group("/carts")
-	//cartRouter.Use(authMiddleware.AuthJWT("customer"))
-	cartRouter.POST("/:customerId", cartController.PushProductToCart)
-	cartRouter.PATCH("/:customerId/products/:productId", cartController.UpdateProductQuantity)
-	cartRouter.DELETE("/:customerId/products/:productId", cartController.PullProductFromCart)
+	router.POST("/api/v1/auth/merchant", authController.LoginMerchant)
+	router.POST("/api/v1/auth/customer", authController.LoginCustomer)
+	router.POST("/api/v1/auth/admin", authController.LoginAdmin)
 
-	transactionRouter := v1.Group("/transactions")
-	transactionRouter.POST("/callback", transactionController.Callback)
-	//transactionRouter.Use(authMiddleware.AuthJWT("customer"))
-	transactionRouter.POST("/:customerId", transactionController.Create)
-	transactionRouter.DELETE("/:customerId/transactions/:transactionId", transactionController.Cancel)
-
-	authRouter := v1.Group("/auth")
-	authRouter.POST("/merchant", authController.LoginMerchant)
-	authRouter.POST("/customer", authController.LoginCustomer)
-	authRouter.POST("/admin", authController.LoginAdmin)
-
-	errorRun := r.Run(":3000")
-	if errorRun != nil {
-		panic(errorRun)
+	server := http.Server{
+		Addr:    "localhost:3000",
+		Handler: router,
 	}
+	err = server.ListenAndServe()
+	helper.PanicIfError(err)
 }

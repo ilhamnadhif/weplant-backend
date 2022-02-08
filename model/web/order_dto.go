@@ -16,7 +16,6 @@ type OrderProductResponse struct {
 }
 
 type OrderResponse struct {
-	CustomerId string                  `json:"customer_id"`
-	Products   []*OrderProductResponse `json:"products"`
+	CustomerId string                 `json:"customer_id"`
+	Products   []OrderProductResponse `json:"products"`
 }
-

@@ -9,11 +9,11 @@ type TransactionProduct struct {
 }
 
 type Transaction struct {
-	Id        primitive.ObjectID    `bson:"_id,omitempty"`
-	CreatedAt int                   `bson:"created_at,omitempty"`
-	UpdatedAt int                   `bson:"updated_at,omitempty"`
-	Status    string                `json:"status"`
-	QRCode    string                `json:"qr_code"`
-	Products  []*TransactionProduct `bson:"products,omitempty"`
-	Address   *Address              `bson:"address,omitempty"`
+	Id        primitive.ObjectID   `bson:"_id,omitempty"`
+	CreatedAt int                  `bson:"created_at,omitempty"`
+	UpdatedAt int                  `bson:"updated_at,omitempty"`
+	Status    string               `json:"status"`
+	QRCode    string               `json:"qr_code"`
+	Products  []TransactionProduct `bson:"products,omitempty"`
+	Address   *Address             `bson:"address,omitempty"`
 }
