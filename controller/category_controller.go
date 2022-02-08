@@ -1,140 +1,15 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"weplant-backend/helper"
-	"weplant-backend/model/web"
-	"weplant-backend/service"
 )
 
 type CategoryController interface {
-	Create(c *gin.Context)
-	FindById(c *gin.Context)
-	FindAll(c *gin.Context)
-	Update(c *gin.Context)
-	UpdateMainImage(c *gin.Context)
-	Delete(c *gin.Context)
-}
-
-type categoryControllerImpl struct {
-	CategoryService service.CategoryService
-}
-
-func NewCategoryController(categoryService service.CategoryService) CategoryController {
-	return &categoryControllerImpl{
-		CategoryService: categoryService,
-	}
-}
-
-func (controller *categoryControllerImpl) Create(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	name := c.PostForm("name")
-
-	image, errorFormFile := c.FormFile("image")
-
-	src, err := image.Open()
-	helper.PanicIfError(err)
-	defer src.Close()
-
-	helper.PanicIfError(errorFormFile)
-	filename := helper.GetFileName(image.Filename)
-
-	res := controller.CategoryService.Create(ctx, web.CategoryCreateRequest{
-		CreatedAt: helper.GetTimeNow(),
-		UpdatedAt: helper.GetTimeNow(),
-		Name:      name,
-		Slug:      helper.SlugGenerate(name),
-		MainImage: &web.ImageCreateRequest{
-			FileName: filename,
-			URL: src,
-		},
-	})
-	c.JSON(http.StatusCreated, web.WebResponse{
-		Code:   http.StatusCreated,
-		Status: "CREATED",
-		Data:   res,
-	})
-}
-
-func (controller *categoryControllerImpl) FindById(c *gin.Context) {
-	ctx := c.Request.Context()
-	id := c.Param("categoryId")
-
-	res := controller.CategoryService.FindById(ctx, id)
-	c.JSON(http.StatusOK, web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   res,
-	})
-}
-
-func (controller *categoryControllerImpl) FindAll(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	res := controller.CategoryService.FindAll(ctx)
-	c.JSON(http.StatusOK, web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   res,
-	})
-}
-
-func (controller *categoryControllerImpl) Update(c *gin.Context) {
-	ctx := c.Request.Context()
-	id := c.Param("categoryId")
-
-	var categoryUpdateRequest web.CategoryUpdateRequest
-	errBind := c.ShouldBindJSON(&categoryUpdateRequest)
-	helper.PanicIfError(errBind)
-	categoryUpdateRequest.Id = id
-	categoryUpdateRequest.UpdatedAt = helper.GetTimeNow()
-
-	res := controller.CategoryService.Update(ctx, categoryUpdateRequest)
-	c.JSON(http.StatusOK, web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   res,
-	})
-}
-
-func (controller *categoryControllerImpl) UpdateMainImage(c *gin.Context) {
-	ctx := c.Request.Context()
-	id := c.Param("categoryId")
-
-	image, errorFormFile := c.FormFile("image")
-
-	src, err := image.Open()
-	helper.PanicIfError(err)
-	defer src.Close()
-
-	helper.PanicIfError(errorFormFile)
-	filename := helper.GetFileName(image.Filename)
-
-	res := controller.CategoryService.UpdateMainImage(ctx, web.CategoryUpdateImageRequest{
-		Id:        id,
-		UpdatedAt: helper.GetTimeNow(),
-		MainImage: &web.ImageUpdateRequest{
-			FileName: filename,
-			URL: src,
-		},
-	})
-	c.JSON(http.StatusOK, web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   res,
-	})
-}
-
-func (controller *categoryControllerImpl) Delete(c *gin.Context) {
-	ctx := c.Request.Context()
-	id := c.Param("categoryId")
-
-	controller.CategoryService.Delete(ctx, id)
-	c.JSON(http.StatusOK, web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   nil,
-	})
+	Create(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	FindById(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	FindAll(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	Update(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	UpdateMainImage(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	Delete(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 }
