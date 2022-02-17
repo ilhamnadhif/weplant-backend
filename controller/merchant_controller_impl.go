@@ -28,7 +28,6 @@ func (controller *MerchantControllerImpl) Create(writer http.ResponseWriter, req
 	address := request.PostFormValue("address")
 	city := request.PostFormValue("city")
 	province := request.PostFormValue("province")
-	country := request.PostFormValue("country")
 	postalCode := request.PostFormValue("postal_code")
 
 	file, fileHeader, err := request.FormFile("image")
@@ -53,7 +52,6 @@ func (controller *MerchantControllerImpl) Create(writer http.ResponseWriter, req
 			Address:    address,
 			City:       city,
 			Province:   province,
-			Country:    country,
 			PostalCode: postalCode,
 		},
 	})

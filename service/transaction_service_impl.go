@@ -6,8 +6,9 @@ import (
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
 	"weplant-backend/repository"
 )
@@ -33,7 +34,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 	helper.PanicIfError(err)
 
 	var productDetailMidtrans []midtrans.ItemDetails
-	var productDetailTransaction []domain.TransactionProduct
+	var productDetailTransaction []schema.TransactionProduct
 
 	var totalPrice int64
 
@@ -60,7 +61,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 			MerchantName: merchant.Name,
 		})
 
-		productDetailTransaction = append(productDetailTransaction, domain.TransactionProduct{
+		productDetailTransaction = append(productDetailTransaction, schema.TransactionProduct{
 			ProductId: product.Id.Hex(),
 			Price:     product.Price,
 			Quantity:  v.Quantity,
@@ -71,7 +72,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 	}
 
 	resMidtrans, errMidtrans := service.MidtransRepository.CreateTransaction(coreapi.ChargeReq{
-		PaymentType: coreapi.PaymentTypeQris,
+		PaymentType: coreapi.PaymentTypeGopay,
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  primitive.NewObjectID().Hex(),
 			GrossAmt: totalPrice,
@@ -104,30 +105,59 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 		panic(errMidtrans.GetMessage())
 	}
 
-	err = service.CustomerRepository.CreateTransaction(ctx, customer.Id.Hex(), domain.Transaction{
-		Id:        helper.ObjectIDFromHex(resMidtrans.OrderID),
-		CreatedAt: request.CreatedAt,
-		UpdatedAt: request.UpdatedAt,
-		Status:    resMidtrans.TransactionStatus,
-		QRCode:    resMidtrans.Actions[0].URL,
-		Products:  productDetailTransaction,
-		Address: &domain.Address{
+	var actionsCreateRequest []schema.TransactionAction
+	var actionsResponse []web.TransactionActionResponse
+	for _, action := range resMidtrans.Actions {
+		if strings.ToLower(action.Name) == "generate-qr-code" {
+			actionsCreateRequest = append(actionsCreateRequest, schema.TransactionAction{
+				Name:   action.Name,
+				Method: action.Method,
+				URL:    action.URL,
+			})
+			actionsResponse = append(actionsResponse, web.TransactionActionResponse{
+				Name:   action.Name,
+				Method: action.Method,
+				URL:    action.URL,
+			})
+		} else if strings.ToLower(action.Name) == "deeplink-redirect" {
+			actionsCreateRequest = append(actionsCreateRequest, schema.TransactionAction{
+				Name:   action.Name,
+				Method: action.Method,
+				URL:    action.URL,
+			})
+			actionsResponse = append(actionsResponse, web.TransactionActionResponse{
+				Name:   action.Name,
+				Method: action.Method,
+				URL:    action.URL,
+			})
+		}
+	}
+
+	err = service.CustomerRepository.CreateTransaction(ctx, customer.Id.Hex(), schema.Transaction{
+		Id:          helper.ObjectIDFromHex(resMidtrans.OrderID),
+		CreatedAt:   request.CreatedAt,
+		UpdatedAt:   request.UpdatedAt,
+		PaymentType: resMidtrans.PaymentType,
+		Status:      resMidtrans.TransactionStatus,
+		Actions:     actionsCreateRequest,
+		Products:    productDetailTransaction,
+		Address: &schema.Address{
 			Address:    request.Address.Address,
 			City:       request.Address.City,
 			Province:   request.Address.Province,
-			Country:    request.Address.Country,
 			PostalCode: request.Address.PostalCode,
 		},
 	})
 	helper.PanicIfError(err)
 
 	return web.TransactionCreateRequestResponse{
-		CreatedAt:  request.CreatedAt,
-		UpdatedAt:  request.UpdatedAt,
-		CustomerId: request.CustomerId,
-		Status:     resMidtrans.TransactionStatus,
-		QRCode:     resMidtrans.Actions[0].URL,
-		Address:    request.Address,
+		CreatedAt:   request.CreatedAt,
+		UpdatedAt:   request.UpdatedAt,
+		PaymentType: resMidtrans.PaymentType,
+		Status:      resMidtrans.TransactionStatus,
+		Actions:     actionsResponse,
+		TotalPrice:  int(totalPrice),
+		Address:     request.Address,
 	}
 }
 
@@ -156,39 +186,37 @@ func (service *TransactionServiceImpl) Callback(ctx context.Context, request cor
 				for _, p := range v.Products {
 					product, err := service.ProductRepository.FindById(ctx, p.ProductId)
 					helper.PanicIfError(err)
-					err = service.CustomerRepository.CreateOrder(ctx, customer.Id.Hex(), domain.OrderProduct{
+					err = service.CustomerRepository.CreateOrder(ctx, customer.Id.Hex(), schema.OrderProduct{
 						Id:        primitive.NewObjectID(),
 						CreatedAt: timeNow,
 						UpdatedAt: timeNow,
 						ProductId: product.Id.Hex(),
 						Price:     p.Price,
 						Quantity:  p.Quantity,
-						Address: &domain.Address{
+						Address: &schema.Address{
 							Address:    v.Address.Address,
 							City:       v.Address.City,
 							Province:   v.Address.Province,
-							Country:    v.Address.Country,
 							PostalCode: v.Address.PostalCode,
 						},
 					})
 					helper.PanicIfError(err)
-					err = service.MerchantRepository.PushProductToManageOrders(ctx, product.MerchantId, domain.ManageOrderProduct{
+					err = service.MerchantRepository.PushProductToManageOrders(ctx, product.MerchantId, schema.ManageOrderProduct{
 						Id:        primitive.NewObjectID(),
 						CreatedAt: timeNow,
 						UpdatedAt: timeNow,
 						ProductId: product.Id.Hex(),
 						Price:     p.Price,
 						Quantity:  p.Quantity,
-						Address: &domain.Address{
+						Address: &schema.Address{
 							Address:    v.Address.Address,
 							City:       v.Address.City,
 							Province:   v.Address.Province,
-							Country:    v.Address.Country,
 							PostalCode: v.Address.PostalCode,
 						},
 					})
 					helper.PanicIfError(err)
-					err = service.ProductRepository.UpdateQuantity(ctx, domain.Product{
+					err = service.ProductRepository.UpdateQuantity(ctx, schema.Product{
 						Id:    product.Id,
 						Stock: -p.Quantity,
 					})

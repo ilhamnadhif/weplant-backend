@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
 	"weplant-backend/repository"
 )
@@ -27,7 +27,7 @@ func (service *CartServiceImpl) PushProductToCart(ctx context.Context, request w
 	product, err := service.ProductRepository.FindById(ctx, request.ProductId)
 	helper.PanicIfErrorNotFound(err)
 
-	err = service.CustomerRepository.PushProductToCart(ctx, customer.Id.Hex(), domain.CartProduct{
+	err = service.CustomerRepository.PushProductToCart(ctx, customer.Id.Hex(), schema.CartProduct{
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
 	})
@@ -42,7 +42,7 @@ func (service *CartServiceImpl) UpdateProductQuantity(ctx context.Context, reque
 	product, err := service.ProductRepository.FindById(ctx, request.ProductId)
 	helper.PanicIfErrorNotFound(err)
 
-	err = service.CustomerRepository.UpdateProductQuantity(ctx, customer.Id.Hex(), domain.CartProduct{
+	err = service.CustomerRepository.UpdateProductQuantity(ctx, customer.Id.Hex(), schema.CartProduct{
 		ProductId: product.Id.Hex(),
 		Quantity:  request.Quantity,
 	})

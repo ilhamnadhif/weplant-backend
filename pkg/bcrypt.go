@@ -1,10 +1,13 @@
-package helper
+package pkg
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"golang.org/x/crypto/bcrypt"
+	"weplant-backend/helper"
+)
 
 func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	PanicIfError(err)
+	helper.PanicIfError(err)
 	return string(bytes)
 }
 

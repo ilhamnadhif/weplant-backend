@@ -10,13 +10,11 @@ import (
 
 type AuthControllerImpl struct {
 	AuthService service.AuthService
-	JWTService  service.JWTService
 }
 
-func NewAuthController(authService service.AuthService, jwtService service.JWTService) AuthController {
+func NewAuthController(authService service.AuthService) AuthController {
 	return &AuthControllerImpl{
 		AuthService: authService,
-		JWTService:  jwtService,
 	}
 }
 
@@ -27,13 +25,6 @@ func (controller *AuthControllerImpl) LoginCustomer(writer http.ResponseWriter, 
 	helper.ReadFromRequestBody(request, &loginRequest)
 
 	customer := controller.AuthService.LoginCustomer(ctx, loginRequest)
-
-	token := controller.JWTService.GenerateToken(web.JWTPayload{
-		Id:   customer.Id,
-		Role: customer.Role,
-	})
-
-	customer.Token = token
 
 	webResponse := web.WebResponse{
 		Code:   http.StatusOK,
@@ -51,13 +42,6 @@ func (controller *AuthControllerImpl) LoginMerchant(writer http.ResponseWriter, 
 
 	merchant := controller.AuthService.LoginMerchant(ctx, loginRequest)
 
-	token := controller.JWTService.GenerateToken(web.JWTPayload{
-		Id:   merchant.Id,
-		Role: merchant.Role,
-	})
-
-	merchant.Token = token
-
 	webResponse := web.WebResponse{
 		Code:   http.StatusOK,
 		Status: "OK",
@@ -73,13 +57,6 @@ func (controller *AuthControllerImpl) LoginAdmin(writer http.ResponseWriter, req
 	helper.ReadFromRequestBody(request, &loginRequest)
 
 	admin := controller.AuthService.LoginAdmin(ctx, loginRequest)
-
-	token := controller.JWTService.GenerateToken(web.JWTPayload{
-		Id:   admin.Id,
-		Role: admin.Role,
-	})
-
-	admin.Token = token
 
 	webResponse := web.WebResponse{
 		Code:   http.StatusOK,

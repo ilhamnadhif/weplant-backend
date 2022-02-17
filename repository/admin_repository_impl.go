@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 )
 
 type AdminRepositoryImpl struct {
@@ -19,7 +19,7 @@ func NewAdminRepository(collection *mongo.Collection) AdminRepository {
 	}
 }
 
-func (repository *AdminRepositoryImpl) Create(ctx context.Context, admin domain.Admin) (domain.Admin, error) {
+func (repository *AdminRepositoryImpl) Create(ctx context.Context, admin schema.Admin) (schema.Admin, error) {
 	res, err := repository.Collection.InsertOne(ctx, admin)
 	if err != nil {
 		return admin, err
@@ -28,8 +28,8 @@ func (repository *AdminRepositoryImpl) Create(ctx context.Context, admin domain.
 	return admin, nil
 }
 
-func (repository *AdminRepositoryImpl) FindById(ctx context.Context, adminId string) (domain.Admin, error) {
-	var admin domain.Admin
+func (repository *AdminRepositoryImpl) FindById(ctx context.Context, adminId string) (schema.Admin, error) {
+	var admin schema.Admin
 	objectId := helper.ObjectIDFromHex(adminId)
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&admin)
 	if err != nil {
@@ -38,8 +38,8 @@ func (repository *AdminRepositoryImpl) FindById(ctx context.Context, adminId str
 	return admin, nil
 }
 
-func (repository *AdminRepositoryImpl) FindByEmail(ctx context.Context, email string) (domain.Admin, error) {
-	var admin domain.Admin
+func (repository *AdminRepositoryImpl) FindByEmail(ctx context.Context, email string) (schema.Admin, error) {
+	var admin schema.Admin
 	err := repository.Collection.FindOne(ctx, bson.D{{"email", email}}).Decode(&admin)
 	if err != nil {
 		return admin, err
@@ -47,8 +47,8 @@ func (repository *AdminRepositoryImpl) FindByEmail(ctx context.Context, email st
 	return admin, nil
 }
 
-func (repository *AdminRepositoryImpl) FindAll(ctx context.Context) ([]domain.Admin, error) {
-	var admins []domain.Admin
+func (repository *AdminRepositoryImpl) FindAll(ctx context.Context) ([]schema.Admin, error) {
+	var admins []schema.Admin
 	cursor, err := repository.Collection.Find(ctx, bson.D{})
 	if err != nil {
 		return admins, err
@@ -60,7 +60,7 @@ func (repository *AdminRepositoryImpl) FindAll(ctx context.Context) ([]domain.Ad
 	return admins, nil
 }
 
-func (repository *AdminRepositoryImpl) Update(ctx context.Context, admin domain.Admin) (domain.Admin, error) {
+func (repository *AdminRepositoryImpl) Update(ctx context.Context, admin schema.Admin) (schema.Admin, error) {
 	_, err := repository.Collection.UpdateByID(ctx, admin.Id, bson.D{{"$set", admin}})
 	if err != nil {
 		return admin, err

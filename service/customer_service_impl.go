@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
+	"weplant-backend/pkg"
 	"weplant-backend/repository"
 )
 
@@ -22,23 +23,24 @@ func NewCustomerService(customerRepository repository.CustomerRepository, produc
 	}
 }
 
-func (service *CustomerServiceImpl) Create(ctx context.Context, request web.CustomerCreateRequest) web.CustomerResponse {
-	res, err := service.CustomerRepository.Create(ctx, domain.Customer{
+func (service *CustomerServiceImpl) Create(ctx context.Context, request web.CustomerCreateRequest) web.TokenResponse {
+	res, err := service.CustomerRepository.Create(ctx, schema.Customer{
 		CreatedAt: request.CreatedAt,
 		UpdatedAt: request.UpdatedAt,
 		Email:     request.Email,
-		Password:  helper.HashPassword(request.Password),
+		Password:  pkg.HashPassword(request.Password),
 		UserName:  request.UserName,
 		Phone:     request.Phone,
 	})
 	helper.PanicIfError(err)
-	return web.CustomerResponse{
-		Id:        res.Id.Hex(),
-		CreatedAt: res.CreatedAt,
-		UpdatedAt: res.UpdatedAt,
-		Email:     res.Email,
-		UserName:  res.UserName,
-		Phone:     res.Phone,
+	token := pkg.GenerateToken(web.JWTPayload{
+		Id:   res.Id.Hex(),
+		Role: "customer",
+	})
+	return web.TokenResponse{
+		Id:    res.Id.Hex(),
+		Role:  "customer",
+		Token: token,
 	}
 }
 
@@ -123,19 +125,28 @@ func (service *CustomerServiceImpl) FindTransactionById(ctx context.Context, cus
 			})
 		}
 
+		var actionResponse []web.TransactionActionResponse
+		for _, action := range v.Actions {
+			actionResponse = append(actionResponse, web.TransactionActionResponse{
+				Name:   action.Name,
+				Method: action.Method,
+				URL:    action.URL,
+			})
+		}
+
 		transactionsResponse = append(transactionsResponse, web.TransactionDetailResponse{
-			Id:         v.Id.Hex(),
-			CreatedAt:  v.CreatedAt,
-			UpdatedAt:  v.UpdatedAt,
-			Status:     v.Status,
-			QRCode:     v.QRCode,
-			TotalPrice: totalPrice,
-			Products:   productsResponse,
+			Id:          v.Id.Hex(),
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			PaymentType: v.PaymentType,
+			Status:      v.Status,
+			Actions:     actionResponse,
+			TotalPrice:  totalPrice,
+			Products:    productsResponse,
 			Address: &web.AddressResponse{
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,
-				Country:    v.Address.Country,
 				PostalCode: v.Address.PostalCode,
 			},
 		})
@@ -175,7 +186,6 @@ func (service *CustomerServiceImpl) FindOrderById(ctx context.Context, customerI
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,
-				Country:    v.Address.Country,
 				PostalCode: v.Address.PostalCode,
 			},
 		})
@@ -192,7 +202,7 @@ func (service *CustomerServiceImpl) Update(ctx context.Context, request web.Cust
 	customer, err := service.CustomerRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
-	_, err = service.CustomerRepository.Update(ctx, domain.Customer{
+	_, err = service.CustomerRepository.Update(ctx, schema.Customer{
 		Id:        customer.Id,
 		UpdatedAt: request.UpdatedAt,
 		UserName:  request.UserName,

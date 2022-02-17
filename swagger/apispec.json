@@ -468,9 +468,6 @@
                   "province": {
                     "type": "string"
                   },
-                  "country": {
-                    "type": "string"
-                  },
                   "postal_code": {
                     "type": "string"
                   },
@@ -2316,9 +2313,6 @@
             "type": "string"
           },
           "province": {
-            "type": "string"
-          },
-          "country": {
             "type": "string"
           },
           "postal_code": {

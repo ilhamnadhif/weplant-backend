@@ -1,10 +1,6 @@
-package domain
+package schema
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
-
-type ProductCategory struct {
-	CategoryId string `bson:"category_id,omitempty"`
-}
 
 type Product struct {
 	Id          primitive.ObjectID `bson:"_id,omitempty"`
@@ -18,5 +14,5 @@ type Product struct {
 	Stock       int                `bson:"stock,omitempty"`
 	MainImage   *Image             `bson:"main_image,omitempty"`
 	Images      []Image            `bson:"images,omitempty"`
-	Categories  []ProductCategory  `bson:"categories,omitempty"`
+	CategoryId  string             `bson:"category_id,omitempty"`
 }

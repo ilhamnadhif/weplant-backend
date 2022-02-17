@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 )
 
 type ProductRepositoryImpl struct {
@@ -21,7 +21,7 @@ func NewProductRepository(collection *mongo.Collection) ProductRepository {
 	}
 }
 
-func (repository *ProductRepositoryImpl) Create(ctx context.Context, product domain.Product) (domain.Product, error) {
+func (repository *ProductRepositoryImpl) Create(ctx context.Context, product schema.Product) (schema.Product, error) {
 	res, err := repository.Collection.InsertOne(ctx, product)
 	if err != nil {
 		return product, err
@@ -30,8 +30,8 @@ func (repository *ProductRepositoryImpl) Create(ctx context.Context, product dom
 	return product, nil
 }
 
-func (repository *ProductRepositoryImpl) FindById(ctx context.Context, productId string) (domain.Product, error) {
-	var product domain.Product
+func (repository *ProductRepositoryImpl) FindById(ctx context.Context, productId string) (schema.Product, error) {
+	var product schema.Product
 	objectId := helper.ObjectIDFromHex(productId)
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&product)
 	if err != nil {
@@ -40,8 +40,8 @@ func (repository *ProductRepositoryImpl) FindById(ctx context.Context, productId
 	return product, nil
 }
 
-func (repository *ProductRepositoryImpl) FindAll(ctx context.Context) ([]domain.Product, error) {
-	var products []domain.Product
+func (repository *ProductRepositoryImpl) FindAll(ctx context.Context) ([]schema.Product, error) {
+	var products []schema.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{})
 	if err != nil {
 		return products, err
@@ -53,8 +53,8 @@ func (repository *ProductRepositoryImpl) FindAll(ctx context.Context) ([]domain.
 	return products, nil
 }
 
-func (repository *ProductRepositoryImpl) FindAllWithSearch(ctx context.Context, search string) ([]domain.Product, error) {
-	var products []domain.Product
+func (repository *ProductRepositoryImpl) FindAllWithSearch(ctx context.Context, search string) ([]schema.Product, error) {
+	var products []schema.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{{"$and", bson.A{
 		bson.D{{"$text", bson.D{{
 			"$search", search,
@@ -70,7 +70,7 @@ func (repository *ProductRepositoryImpl) FindAllWithSearch(ctx context.Context, 
 	return products, nil
 }
 
-func (repository *ProductRepositoryImpl) Update(ctx context.Context, product domain.Product) (domain.Product, error) {
+func (repository *ProductRepositoryImpl) Update(ctx context.Context, product schema.Product) (schema.Product, error) {
 	_, err := repository.Collection.UpdateByID(ctx, product.Id, bson.D{{"$set", product}})
 	if err != nil {
 		return product, err
@@ -78,7 +78,7 @@ func (repository *ProductRepositoryImpl) Update(ctx context.Context, product dom
 	return product, nil
 }
 
-func (repository *ProductRepositoryImpl) PushImageIntoImages(ctx context.Context, productId string, images []domain.Image) ([]domain.Image, error) {
+func (repository *ProductRepositoryImpl) PushImageIntoImages(ctx context.Context, productId string, images []schema.Image) ([]schema.Image, error) {
 	objectId := helper.ObjectIDFromHex(productId)
 	_, err := repository.Collection.UpdateByID(ctx, objectId, bson.D{
 		{
@@ -99,12 +99,12 @@ func (repository *ProductRepositoryImpl) PushImageIntoImages(ctx context.Context
 	return images, nil
 }
 
-func (repository *ProductRepositoryImpl) PullImageFromImages(ctx context.Context, productId string, imageId string) (domain.Image, error) {
+func (repository *ProductRepositoryImpl) PullImageFromImages(ctx context.Context, productId string, imageId string) (schema.Image, error) {
 	objectProductId := helper.ObjectIDFromHex(productId)
 	objectImageId := helper.ObjectIDFromHex(imageId)
 
-	var product domain.Product
-	var image domain.Image
+	var product schema.Product
+	var image schema.Image
 
 	err := repository.Collection.FindOneAndUpdate(ctx, bson.D{{"_id", objectProductId}}, bson.D{
 		{
@@ -155,8 +155,8 @@ func (repository *ProductRepositoryImpl) Delete(ctx context.Context, productId s
 }
 
 // merchant
-func (repository *ProductRepositoryImpl) FindByMerchantId(ctx context.Context, merchantId string) ([]domain.Product, error) {
-	var products []domain.Product
+func (repository *ProductRepositoryImpl) FindByMerchantId(ctx context.Context, merchantId string) ([]schema.Product, error) {
+	var products []schema.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{
 		{"merchant_id", merchantId},
 	})
@@ -171,14 +171,10 @@ func (repository *ProductRepositoryImpl) FindByMerchantId(ctx context.Context, m
 }
 
 // category
-func (repository *ProductRepositoryImpl) FindByCategoryId(ctx context.Context, categoryId string) ([]domain.Product, error) {
-	var products []domain.Product
+func (repository *ProductRepositoryImpl) FindByCategoryId(ctx context.Context, categoryId string) ([]schema.Product, error) {
+	var products []schema.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{
-		{"categories", bson.D{
-			{"$elemMatch", bson.D{
-				{"category_id", categoryId},
-			}},
-		}},
+		{"category_id", categoryId},
 	})
 	if err != nil {
 		return products, err
@@ -209,7 +205,7 @@ func (repository *ProductRepositoryImpl) PullCategoryIdFromProduct(ctx context.C
 }
 
 // transaction
-func (repository *ProductRepositoryImpl) UpdateQuantity(ctx context.Context, product domain.Product) error {
+func (repository *ProductRepositoryImpl) UpdateQuantity(ctx context.Context, product schema.Product) error {
 	_, err := repository.Collection.UpdateByID(ctx, product.Id, bson.D{
 		{
 			"$inc", bson.D{

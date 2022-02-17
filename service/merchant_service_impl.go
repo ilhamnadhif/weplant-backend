@@ -4,8 +4,9 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
+	"weplant-backend/pkg"
 	"weplant-backend/repository"
 )
 
@@ -23,28 +24,27 @@ func NewMerchantService(merchantRepository repository.MerchantRepository, cloudi
 	}
 }
 
-func (service *MerchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest) web.MerchantResponse {
+func (service *MerchantServiceImpl) Create(ctx context.Context, request web.MerchantCreateRequest) web.TokenResponse {
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
-	res, err := service.MerchantRepository.Create(ctx, domain.Merchant{
+	res, err := service.MerchantRepository.Create(ctx, schema.Merchant{
 		CreatedAt: request.CreatedAt,
 		UpdatedAt: request.UpdatedAt,
 		Email:     request.Email,
-		Password:  helper.HashPassword(request.Password),
+		Password:  pkg.HashPassword(request.Password),
 		Name:      request.Name,
 		Slug:      request.Slug,
 		Phone:     request.Phone,
-		MainImage: &domain.Image{
+		MainImage: &schema.Image{
 			Id:       primitive.NewObjectID(),
 			FileName: request.MainImage.FileName,
 			URL:      url,
 		},
-		Address: &domain.Address{
+		Address: &schema.Address{
 			Address:    request.Address.Address,
 			City:       request.Address.City,
 			Province:   request.Address.Province,
-			Country:    request.Address.Country,
 			PostalCode: request.Address.PostalCode,
 		},
 	})
@@ -54,28 +54,14 @@ func (service *MerchantServiceImpl) Create(ctx context.Context, request web.Merc
 		panic(err.Error())
 	}
 
-	return web.MerchantResponse{
-		Id:        res.Id.Hex(),
-		CreatedAt: res.CreatedAt,
-		UpdatedAt: res.UpdatedAt,
-		Email:     res.Email,
-		Name:      res.Name,
-		Slug:      res.Slug,
-		Phone:     res.Phone,
-		Balance:   res.Balance,
-		MainImage: &web.ImageResponse{
-			Id:       res.MainImage.Id.Hex(),
-			FileName: res.MainImage.FileName,
-			URL:      res.MainImage.URL,
-		},
-		Address: &web.AddressResponse{
-			Address:    res.Address.Address,
-			City:       res.Address.City,
-			Province:   res.Address.Province,
-			Country:    res.Address.Country,
-			PostalCode: res.Address.PostalCode,
-		},
-		Products: nil,
+	token := pkg.GenerateToken(web.JWTPayload{
+		Id:   res.Id.Hex(),
+		Role: "merchant",
+	})
+	return web.TokenResponse{
+		Id:    res.Id.Hex(),
+		Role:  "merchant",
+		Token: token,
 	}
 }
 
@@ -124,7 +110,6 @@ func (service *MerchantServiceImpl) FindById(ctx context.Context, merchantId str
 			Address:    merchant.Address.Address,
 			City:       merchant.Address.City,
 			Province:   merchant.Address.Province,
-			Country:    merchant.Address.Country,
 			PostalCode: merchant.Address.PostalCode,
 		},
 		Products: productsResponse,
@@ -160,7 +145,6 @@ func (service *MerchantServiceImpl) FindManageOrderById(ctx context.Context, mer
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,
-				Country:    v.Address.Country,
 				PostalCode: v.Address.PostalCode,
 			},
 		})
@@ -176,17 +160,16 @@ func (service *MerchantServiceImpl) Update(ctx context.Context, request web.Merc
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
-	_, err = service.MerchantRepository.Update(ctx, domain.Merchant{
+	_, err = service.MerchantRepository.Update(ctx, schema.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
 		Slug:      merchant.Slug,
 		Phone:     request.Phone,
-		Address: &domain.Address{
+		Address: &schema.Address{
 			Address:    request.Address.Address,
 			City:       request.Address.City,
 			Province:   request.Address.Province,
-			Country:    request.Address.Country,
 			PostalCode: request.Address.PostalCode,
 		},
 	})
@@ -201,11 +184,11 @@ func (service *MerchantServiceImpl) UpdateMainImage(ctx context.Context, request
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
-	_, err = service.MerchantRepository.Update(ctx, domain.Merchant{
+	_, err = service.MerchantRepository.Update(ctx, schema.Merchant{
 		Id:        merchant.Id,
 		UpdatedAt: request.UpdatedAt,
 		Slug:      merchant.Slug,
-		MainImage: &domain.Image{
+		MainImage: &schema.Image{
 			Id:       merchant.MainImage.Id,
 			FileName: request.MainImage.FileName,
 			URL:      url,

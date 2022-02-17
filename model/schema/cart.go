@@ -1,4 +1,4 @@
-package domain
+package schema
 
 type CartProduct struct {
 	ProductId string `bson:"product_id,omitempty"`

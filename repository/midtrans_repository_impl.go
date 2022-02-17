@@ -19,14 +19,14 @@ func NewMidtransRepository(serverKey string) MidtransRepository {
 
 func (repository *MidtransRepositoryImpl) CreateTransaction(req coreapi.ChargeReq) (*coreapi.ChargeResponse, *midtrans.Error) {
 	var c coreapi.Client
-	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("GO_ENV")))
 
 	return c.ChargeTransaction(&req)
 }
 
 func (repository *MidtransRepositoryImpl) CancelTransaction(orderId string) (*coreapi.CancelResponse, *midtrans.Error) {
 	var c coreapi.Client
-	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("GO_ENV")))
 
 	return c.CancelTransaction(orderId)
 }
@@ -34,7 +34,7 @@ func (repository *MidtransRepositoryImpl) CancelTransaction(orderId string) (*co
 func (repository *MidtransRepositoryImpl) CheckTransaction(orderId string) (*coreapi.TransactionStatusResponse, *midtrans.Error) {
 
 	var c coreapi.Client
-	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("ENV_MODE")))
+	c.New(repository.ServerKey, helper.MidtransEnvType(os.Getenv("GO_ENV")))
 
 	return c.CheckTransaction(orderId)
 }

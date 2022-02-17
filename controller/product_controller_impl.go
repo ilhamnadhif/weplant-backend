@@ -34,6 +34,7 @@ func (controller *ProductControllerImpl) Create(writer http.ResponseWriter, requ
 	helper.PanicIfError(err)
 	stock, err := strconv.Atoi(request.PostFormValue("stock"))
 	helper.PanicIfError(err)
+	categoryId := request.PostFormValue("category_id")
 
 	// main image
 	file, fileHeader, err := request.FormFile("image")
@@ -57,15 +58,6 @@ func (controller *ProductControllerImpl) Create(writer http.ResponseWriter, requ
 		})
 	}
 
-	// categories
-	categories := request.PostForm["categories"]
-	var categoriesCreateRequest []web.ProductCategoryCreateRequest
-	for _, category := range categories {
-		categoriesCreateRequest = append(categoriesCreateRequest, web.ProductCategoryCreateRequest{
-			CategoryId: category,
-		})
-	}
-
 	res := controller.ProductService.Create(ctx, web.ProductCreateRequest{
 		CreatedAt:   helper.GetTimeNow(),
 		UpdatedAt:   helper.GetTimeNow(),
@@ -79,8 +71,8 @@ func (controller *ProductControllerImpl) Create(writer http.ResponseWriter, requ
 			FileName: filename,
 			URL:      file,
 		},
-		Images:     imagesCreateRequest,
-		Categories: categoriesCreateRequest,
+		Images:   imagesCreateRequest,
+		CategoryId: categoryId,
 	})
 
 	webResponse := web.WebResponse{

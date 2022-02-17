@@ -4,7 +4,7 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
 	"weplant-backend/repository"
 )
@@ -27,12 +27,12 @@ func (service *CategoryServiceImpl) Create(ctx context.Context, request web.Cate
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
-	res, err := service.CategoryRepository.Create(ctx, domain.Category{
+	res, err := service.CategoryRepository.Create(ctx, schema.Category{
 		CreatedAt: request.CreatedAt,
 		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
 		Slug:      request.Slug,
-		MainImage: &domain.Image{
+		MainImage: &schema.Image{
 			Id:       primitive.NewObjectID(),
 			FileName: request.MainImage.FileName,
 			URL:      url,
@@ -126,7 +126,7 @@ func (service *CategoryServiceImpl) Update(ctx context.Context, request web.Cate
 	category, err := service.CategoryRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
-	_, err = service.CategoryRepository.Update(ctx, domain.Category{
+	_, err = service.CategoryRepository.Update(ctx, schema.Category{
 		Id:        category.Id,
 		UpdatedAt: request.UpdatedAt,
 		Name:      request.Name,
@@ -143,11 +143,11 @@ func (service *CategoryServiceImpl) UpdateMainImage(ctx context.Context, request
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
-	_, err = service.CategoryRepository.Update(ctx, domain.Category{
+	_, err = service.CategoryRepository.Update(ctx, schema.Category{
 		Id:        category.Id,
 		UpdatedAt: request.UpdatedAt,
 		Slug:      category.Slug,
-		MainImage: &domain.Image{
+		MainImage: &schema.Image{
 			Id:       category.MainImage.Id,
 			FileName: request.MainImage.FileName,
 			URL:      url,

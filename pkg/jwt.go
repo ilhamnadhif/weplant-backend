@@ -1,4 +1,4 @@
-package service
+package pkg
 
 import (
 	"fmt"
@@ -10,14 +10,7 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-type JwtServiceImpl struct {
-}
-
-func NewJWTService() JWTService {
-	return &JwtServiceImpl{}
-}
-
-func (service *JwtServiceImpl) GenerateToken(payload web.JWTPayload) string {
+func GenerateToken(payload web.JWTPayload) string {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":   payload.Id,
@@ -28,7 +21,7 @@ func (service *JwtServiceImpl) GenerateToken(payload web.JWTPayload) string {
 	return tokenString
 }
 
-func (service *JwtServiceImpl) ValidateToken(tokenString string) (web.JWTPayload, error) {
+func ValidateToken(tokenString string) (web.JWTPayload, error) {
 	payload := web.JWTPayload{}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

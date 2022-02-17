@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 )
 
 type CustomerRepositoryImpl struct {
@@ -19,7 +19,7 @@ func NewCustomerRepository(collection *mongo.Collection) CustomerRepository {
 	}
 }
 
-func (repository *CustomerRepositoryImpl) Create(ctx context.Context, customer domain.Customer) (domain.Customer, error) {
+func (repository *CustomerRepositoryImpl) Create(ctx context.Context, customer schema.Customer) (schema.Customer, error) {
 	res, err := repository.Collection.InsertOne(ctx, customer)
 	if err != nil {
 		return customer, err
@@ -28,9 +28,9 @@ func (repository *CustomerRepositoryImpl) Create(ctx context.Context, customer d
 	return customer, nil
 }
 
-func (repository *CustomerRepositoryImpl) FindById(ctx context.Context, customerId string) (domain.Customer, error) {
+func (repository *CustomerRepositoryImpl) FindById(ctx context.Context, customerId string) (schema.Customer, error) {
 	objectId := helper.ObjectIDFromHex(customerId)
-	var customer domain.Customer
+	var customer schema.Customer
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&customer)
 	if err != nil {
 		return customer, err
@@ -38,8 +38,8 @@ func (repository *CustomerRepositoryImpl) FindById(ctx context.Context, customer
 	return customer, nil
 }
 
-func (repository *CustomerRepositoryImpl) FindByEmail(ctx context.Context, email string) (domain.Customer, error) {
-	var customer domain.Customer
+func (repository *CustomerRepositoryImpl) FindByEmail(ctx context.Context, email string) (schema.Customer, error) {
+	var customer schema.Customer
 	err := repository.Collection.FindOne(ctx, bson.D{{"email", email}}).Decode(&customer)
 	if err != nil {
 		return customer, err
@@ -47,7 +47,7 @@ func (repository *CustomerRepositoryImpl) FindByEmail(ctx context.Context, email
 	return customer, nil
 }
 
-func (repository *CustomerRepositoryImpl) Update(ctx context.Context, customer domain.Customer) (domain.Customer, error) {
+func (repository *CustomerRepositoryImpl) Update(ctx context.Context, customer schema.Customer) (schema.Customer, error) {
 	_, err := repository.Collection.UpdateByID(ctx, customer.Id, bson.D{{"$set", customer}})
 	if err != nil {
 		return customer, err
@@ -65,7 +65,7 @@ func (repository *CustomerRepositoryImpl) Delete(ctx context.Context, customerId
 }
 
 // cart
-func (repository *CustomerRepositoryImpl) PushProductToCart(ctx context.Context, customerId string, product domain.CartProduct) error {
+func (repository *CustomerRepositoryImpl) PushProductToCart(ctx context.Context, customerId string, product schema.CartProduct) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{
@@ -85,7 +85,7 @@ func (repository *CustomerRepositoryImpl) PushProductToCart(ctx context.Context,
 	return nil
 }
 
-func (repository *CustomerRepositoryImpl) UpdateProductQuantity(ctx context.Context, customerId string, product domain.CartProduct) error {
+func (repository *CustomerRepositoryImpl) UpdateProductQuantity(ctx context.Context, customerId string, product schema.CartProduct) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{
@@ -143,7 +143,7 @@ func (repository *CustomerRepositoryImpl) PullProductFromAllCart(ctx context.Con
 
 // Transaction
 
-func (repository *CustomerRepositoryImpl) CreateTransaction(ctx context.Context, customerId string, transaction domain.Transaction) error {
+func (repository *CustomerRepositoryImpl) CreateTransaction(ctx context.Context, customerId string, transaction schema.Transaction) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateByID(ctx, objectId, bson.D{
 		{"$push", bson.D{
@@ -176,7 +176,7 @@ func (repository *CustomerRepositoryImpl) DeleteTransaction(ctx context.Context,
 	return nil
 }
 
-func (repository *CustomerRepositoryImpl) CreateOrder(ctx context.Context, customerId string, order domain.OrderProduct) error {
+func (repository *CustomerRepositoryImpl) CreateOrder(ctx context.Context, customerId string, order schema.OrderProduct) error {
 	objectId := helper.ObjectIDFromHex(customerId)
 	_, err := repository.Collection.UpdateOne(ctx, bson.D{
 		{"$and", bson.A{

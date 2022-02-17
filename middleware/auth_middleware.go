@@ -5,20 +5,11 @@ import (
 	"net/http"
 	"strings"
 	"weplant-backend/exception"
-	"weplant-backend/service"
+	"weplant-backend/pkg"
 )
 
-type MiddlewareImpl struct {
-	JWTService service.JWTService
-}
 
-func NewMiddleware(jwtService service.JWTService) Middleware {
-	return &MiddlewareImpl{
-		JWTService: jwtService,
-	}
-}
-
-func (middleware *MiddlewareImpl) AuthMiddleware(handle httprouter.Handle, role string) httprouter.Handle {
+func  AuthMiddleware(handle httprouter.Handle, role string) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		header := request.Header.Get("Authorization")
 		if len(strings.Split(header, " ")) != 2 {
@@ -26,7 +17,7 @@ func (middleware *MiddlewareImpl) AuthMiddleware(handle httprouter.Handle, role 
 		}
 		token := strings.Split(header, " ")[1]
 
-		payload, err := middleware.JWTService.ValidateToken(token)
+		payload, err := pkg.ValidateToken(token)
 		if err != nil {
 			panic(exception.NewUnauthorizedError(err.Error()))
 		}

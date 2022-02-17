@@ -10,16 +10,22 @@ type TransactionProductResponse struct {
 	SubTotal    int            `json:"sub_total"`
 	MainImage   *ImageResponse `json:"main_image"`
 }
+type TransactionActionResponse struct {
+	Name   string `json:"name"`
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
 
 type TransactionDetailResponse struct {
-	Id         string                       `json:"id"`
-	CreatedAt  int                          `json:"created_at"`
-	UpdatedAt  int                          `json:"updated_at"`
-	Status     string                       `json:"status"`
-	QRCode     string                       `json:"qr_code"`
-	TotalPrice int                          `json:"total_price"`
-	Products   []TransactionProductResponse `json:"products"`
-	Address    *AddressResponse             `json:"address"`
+	Id          string                       `json:"id"`
+	CreatedAt   int                          `json:"created_at"`
+	UpdatedAt   int                          `json:"updated_at"`
+	PaymentType string                       `json:"payment_type"`
+	Status      string                       `json:"status"`
+	Actions     []TransactionActionResponse  `json:"actions"`
+	TotalPrice  int                          `json:"total_price"`
+	Products    []TransactionProductResponse `json:"products"`
+	Address     *AddressResponse             `json:"address"`
 }
 
 type TransactionResponse struct {
@@ -35,10 +41,11 @@ type TransactionCreateRequest struct {
 }
 
 type TransactionCreateRequestResponse struct {
-	CreatedAt  int                   `json:"created_at"`
-	UpdatedAt  int                   `json:"updated_at"`
-	CustomerId string                `json:"customer_id"`
-	Status     string                `json:"status"`
-	QRCode     string                `json:"qr_code"`
-	Address    *AddressCreateRequest `json:"address"`
+	CreatedAt   int                         `json:"created_at"`
+	UpdatedAt   int                         `json:"updated_at"`
+	PaymentType string                      `json:"payment_type"`
+	Status      string                      `json:"status"`
+	Actions     []TransactionActionResponse `json:"actions"`
+	TotalPrice  int                         `json:"total_price"`
+	Address     *AddressCreateRequest       `json:"address"`
 }

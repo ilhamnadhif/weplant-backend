@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"weplant-backend/helper"
-	"weplant-backend/model/domain"
+	"weplant-backend/model/schema"
 )
 
 type CategoryRepositoryImpl struct {
@@ -19,7 +19,7 @@ func NewCategoryRepository(collection *mongo.Collection) CategoryRepository {
 	}
 }
 
-func (repository *CategoryRepositoryImpl) Create(ctx context.Context, category domain.Category) (domain.Category, error) {
+func (repository *CategoryRepositoryImpl) Create(ctx context.Context, category schema.Category) (schema.Category, error) {
 	res, err := repository.Collection.InsertOne(ctx, category)
 	if err != nil {
 		return category, err
@@ -28,8 +28,8 @@ func (repository *CategoryRepositoryImpl) Create(ctx context.Context, category d
 	return category, nil
 }
 
-func (repository *CategoryRepositoryImpl) FindById(ctx context.Context, categoryId string) (domain.Category, error) {
-	var category domain.Category
+func (repository *CategoryRepositoryImpl) FindById(ctx context.Context, categoryId string) (schema.Category, error) {
+	var category schema.Category
 	objectId := helper.ObjectIDFromHex(categoryId)
 	err := repository.Collection.FindOne(ctx, bson.D{{"_id", objectId}}).Decode(&category)
 	if err != nil {
@@ -38,8 +38,8 @@ func (repository *CategoryRepositoryImpl) FindById(ctx context.Context, category
 	return category, nil
 }
 
-func (repository *CategoryRepositoryImpl) FindAll(ctx context.Context) ([]domain.Category, error) {
-	var categories []domain.Category
+func (repository *CategoryRepositoryImpl) FindAll(ctx context.Context) ([]schema.Category, error) {
+	var categories []schema.Category
 	cursor, err := repository.Collection.Find(ctx, bson.D{})
 	if err != nil {
 		return categories, err
@@ -51,7 +51,7 @@ func (repository *CategoryRepositoryImpl) FindAll(ctx context.Context) ([]domain
 	return categories, nil
 }
 
-func (repository *CategoryRepositoryImpl) Update(ctx context.Context, category domain.Category) (domain.Category, error) {
+func (repository *CategoryRepositoryImpl) Update(ctx context.Context, category schema.Category) (schema.Category, error) {
 	_, err := repository.Collection.UpdateByID(ctx, category.Id, bson.D{{"$set", category}})
 	if err != nil {
 		return category, err
