@@ -32,7 +32,7 @@ func main() {
 	swagger, err := fs.Sub(spec, "swagger")
 	helper.PanicIfError(err)
 
-	pkg.GoDotENV()
+	//pkg.GoDotENV()
 
 	client := config.GetConnection()
 	defer config.CloseConnection(client)
@@ -173,10 +173,14 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "8080"
 	}
 	fmt.Println(fmt.Sprintf("app listening on port %s", port))
 
-	err = http.ListenAndServe(":"+port, router)
+	server := http.Server{
+		Addr: ":"+port,
+		Handler: router,
+	}
+	err = server.ListenAndServe()
 	helper.PanicIfError(err)
 }

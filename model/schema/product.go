@@ -2,6 +2,10 @@ package schema
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+type ProductCategory struct {
+	CategoryId string `bson:"category_id,omitempty"`
+}
+
 type Product struct {
 	Id          primitive.ObjectID `bson:"_id,omitempty"`
 	CreatedAt   int                `bson:"created_at,omitempty"`
@@ -14,5 +18,5 @@ type Product struct {
 	Stock       int                `bson:"stock,omitempty"`
 	MainImage   *Image             `bson:"main_image,omitempty"`
 	Images      []Image            `bson:"images,omitempty"`
-	CategoryId  string             `bson:"category_id,omitempty"`
+	Categories  []ProductCategory  `bson:"categories,omitempty"`
 }

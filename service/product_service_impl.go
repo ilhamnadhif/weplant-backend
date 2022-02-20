@@ -34,8 +34,14 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
-	category, err := service.CategoryRepository.FindById(ctx, request.CategoryId)
-	helper.PanicIfErrorNotFound(err)
+	var categoriesCreateRequest []schema.ProductCategory
+	for _, category := range request.Categories {
+		c, err := service.CategoryRepository.FindById(ctx, category.CategoryId)
+		helper.PanicIfErrorNotFound(err)
+		categoriesCreateRequest = append(categoriesCreateRequest, schema.ProductCategory{
+			CategoryId: c.Id.Hex(),
+		})
+	}
 
 	var imageCreateRequest []schema.Image
 	for _, image := range request.Images {
@@ -63,7 +69,7 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 			URL:      url,
 		},
 		Images:     imageCreateRequest,
-		CategoryId: category.Id.Hex(),
+		Categories: categoriesCreateRequest,
 	})
 	if err != nil {
 		err := service.CloudinaryRepository.DeleteImage(ctx, request.MainImage.FileName)
@@ -84,6 +90,24 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 		})
 	}
 
+	var categoriesResponse []web.CategoryResponse
+	for _, c := range res.Categories {
+		category, err := service.CategoryRepository.FindById(ctx, c.CategoryId)
+		helper.PanicIfError(err)
+		categoriesResponse = append(categoriesResponse, web.CategoryResponse{
+			Id:        category.Id.Hex(),
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+			Name:      category.Name,
+			Slug:      category.Slug,
+			MainImage: &web.ImageResponse{
+				Id:       category.MainImage.Id.Hex(),
+				FileName: category.MainImage.FileName,
+				URL:      category.MainImage.URL,
+			},
+		})
+	}
+
 	return web.ProductResponse{
 		Id:          res.Id.Hex(),
 		CreatedAt:   res.CreatedAt,
@@ -99,8 +123,29 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 			FileName: res.MainImage.FileName,
 			URL:      res.MainImage.URL,
 		},
-		Images: imagesResponse,
-		Category: &web.CategoryResponse{
+		Images:     imagesResponse,
+		Categories: categoriesResponse,
+	}
+}
+
+func (service *ProductServiceImpl) FindById(ctx context.Context, productId string) web.ProductResponse {
+	product, err := service.ProductRepository.FindById(ctx, productId)
+	helper.PanicIfErrorNotFound(err)
+
+	var imagesResponse []web.ImageResponse
+	for _, img := range product.Images {
+		imagesResponse = append(imagesResponse, web.ImageResponse{
+			Id:       img.Id.Hex(),
+			FileName: img.FileName,
+			URL:      img.URL,
+		})
+	}
+
+	var categoriesResponse []web.CategoryResponse
+	for _, v := range product.Categories {
+		category, err := service.CategoryRepository.FindById(ctx, v.CategoryId)
+		helper.PanicIfError(err)
+		categoriesResponse = append(categoriesResponse, web.CategoryResponse{
 			Id:        category.Id.Hex(),
 			CreatedAt: category.CreatedAt,
 			UpdatedAt: category.UpdatedAt,
@@ -111,23 +156,6 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 				FileName: category.MainImage.FileName,
 				URL:      category.MainImage.URL,
 			},
-		},
-	}
-}
-
-func (service *ProductServiceImpl) FindById(ctx context.Context, productId string) web.ProductResponse {
-	product, err := service.ProductRepository.FindById(ctx, productId)
-	helper.PanicIfErrorNotFound(err)
-
-	category, err := service.CategoryRepository.FindById(ctx, product.CategoryId)
-	helper.PanicIfError(err)
-
-	var imagesResponse []web.ImageResponse
-	for _, img := range product.Images {
-		imagesResponse = append(imagesResponse, web.ImageResponse{
-			Id:       img.Id.Hex(),
-			FileName: img.FileName,
-			URL:      img.URL,
 		})
 	}
 
@@ -146,19 +174,8 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 			FileName: product.MainImage.FileName,
 			URL:      product.MainImage.URL,
 		},
-		Images: imagesResponse,
-		Category: &web.CategoryResponse{
-			Id:        category.Id.Hex(),
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-			Name:      category.Name,
-			Slug:      category.Slug,
-			MainImage: &web.ImageResponse{
-				Id:       category.MainImage.Id.Hex(),
-				FileName: category.MainImage.FileName,
-				URL:      category.MainImage.URL,
-			},
-		},
+		Images:     imagesResponse,
+		Categories: categoriesResponse,
 	}
 }
 
@@ -219,8 +236,14 @@ func (service *ProductServiceImpl) Update(ctx context.Context, request web.Produ
 	product, err := service.ProductRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
-	category, err := service.CategoryRepository.FindById(ctx, request.CategoryId)
-	helper.PanicIfErrorNotFound(err)
+	var categoriesUpdateRequest []schema.ProductCategory
+	for _, v := range request.Categories {
+		category, err := service.CategoryRepository.FindById(ctx, v.CategoryId)
+		helper.PanicIfErrorNotFound(err)
+		categoriesUpdateRequest = append(categoriesUpdateRequest, schema.ProductCategory{
+			CategoryId: category.Id.Hex(),
+		})
+	}
 
 	_, err = service.ProductRepository.Update(ctx, schema.Product{
 		Id:          product.Id,
@@ -230,7 +253,7 @@ func (service *ProductServiceImpl) Update(ctx context.Context, request web.Produ
 		Description: request.Description,
 		Price:       request.Price,
 		Stock:       request.Stock,
-		CategoryId:  category.Id.Hex(),
+		Categories:  categoriesUpdateRequest,
 	})
 	helper.PanicIfError(err)
 	return request

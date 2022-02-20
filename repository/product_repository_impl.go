@@ -174,7 +174,11 @@ func (repository *ProductRepositoryImpl) FindByMerchantId(ctx context.Context, m
 func (repository *ProductRepositoryImpl) FindByCategoryId(ctx context.Context, categoryId string) ([]schema.Product, error) {
 	var products []schema.Product
 	cursor, err := repository.Collection.Find(ctx, bson.D{
-		{"category_id", categoryId},
+		{"categories", bson.D{
+			{"$elemMatch", bson.D{
+				{"category_id", categoryId},
+			}},
+		}},
 	})
 	if err != nil {
 		return products, err
