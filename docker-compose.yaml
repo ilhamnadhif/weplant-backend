@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    image: ilhamnadhif/weplant-backend:1.0
     container_name: weplant-backend
     networks:
       - weplant
@@ -12,7 +12,7 @@ services:
       - GO_ENV=developer
       - MONGO_URI=mongodb://ilham:ilham@mongodb:27017
       - CLOUDINARY_URL=cloudinary://287213174684114:M9D51dyLW4H3gAac8ApaurTD_UI@weplant
-      - CLOUDINARY_FOLDER=weplantprod
+      - CLOUDINARY_FOLDER=weplant
       - MIDTRANS_SERVER_KEY=SB-Mid-server-uwDke7AME__PwAx48cbcBjlu
     depends_on:
       - mongodb
@@ -27,7 +27,13 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=ilham
       - MONGO_INITDB_ROOT_PASSWORD=ilham
+    volumes:
+      - weplant-mongo-volume:/data/db
 
 networks:
   weplant:
     name: weplant
+
+volumes:
+  weplant-mongo-volume:
+    name: weplant-mongo-volume
