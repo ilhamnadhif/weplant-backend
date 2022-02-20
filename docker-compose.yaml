@@ -14,6 +14,7 @@ services:
       - CLOUDINARY_URL=cloudinary://287213174684114:M9D51dyLW4H3gAac8ApaurTD_UI@weplant
       - CLOUDINARY_FOLDER=weplant
       - MIDTRANS_SERVER_KEY=SB-Mid-server-uwDke7AME__PwAx48cbcBjlu
+      - JWT_SECRET_KEY=jangandibaca
     depends_on:
       - mongodb
 
