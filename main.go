@@ -32,7 +32,7 @@ func main() {
 	swagger, err := fs.Sub(spec, "swagger")
 	helper.PanicIfError(err)
 
-	pkg.GoDotENV()
+	//pkg.GoDotENV()
 
 	client := config.GetConnection()
 	defer config.CloseConnection(client)
