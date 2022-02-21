@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -47,7 +46,6 @@ func (controller *ProductControllerImpl) Create(writer http.ResponseWriter, requ
 	images := request.MultipartForm.File["images"]
 	var imagesCreateRequest []web.ImageCreateRequest
 	for _, img := range images {
-		fmt.Println(img.Filename)
 		file, err := img.Open()
 		helper.PanicIfError(err)
 		file.Close()

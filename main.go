@@ -178,7 +178,7 @@ func main() {
 	fmt.Println(fmt.Sprintf("app listening on port %s", port))
 
 	server := http.Server{
-		Addr: ":"+port,
+		Addr:    ":" + port,
 		Handler: router,
 	}
 	err = server.ListenAndServe()
