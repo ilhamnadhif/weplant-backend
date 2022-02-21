@@ -8,7 +8,8 @@ import (
 	"weplant-backend/pkg"
 )
 
-func AuthMiddleware(handle httprouter.Handle, role string) httprouter.Handle {
+
+func  AuthMiddleware(handle httprouter.Handle, role string) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		header := request.Header.Get("Authorization")
 		if len(strings.Split(header, " ")) != 2 {

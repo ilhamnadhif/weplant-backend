@@ -1,32 +1,34 @@
 package web
 
-type ProductResponse struct {
-	Id          string             `json:"id"`
-	CreatedAt   int                `json:"created_at"`
-	UpdatedAt   int                `json:"updated_at"`
-	MerchantId  string             `json:"merchant_id"`
-	Name        string             `json:"name"`
-	Slug        string             `json:"slug"`
-	Description string             `json:"description"`
-	Price       int                `json:"price"`
-	Stock       int                `json:"stock"`
-	MainImage   *ImageResponse     `json:"main_image"`
-	Images      []ImageResponse    `json:"images"`
-	Categories  []CategoryResponse `json:"categories"`
+// Response
+
+type ProductDetailResponse struct {
+	Id          string                   `json:"id"`
+	CreatedAt   int                      `json:"created_at"`
+	UpdatedAt   int                      `json:"updated_at"`
+	Name        string                   `json:"name"`
+	Slug        string                   `json:"slug"`
+	Description string                   `json:"description"`
+	Price       int                      `json:"price"`
+	Stock       int                      `json:"stock"`
+	MainImage   ImageResponse            `json:"main_image"`
+	Images      []ImageResponse          `json:"images"`
+	Categories  []CategorySimpleResponse `json:"categories"`
+	Merchant    MerchantSimpleResponse   `json:"merchant"`
 }
 
-type ProductResponseAll struct {
-	Id          string         `json:"id"`
-	CreatedAt   int            `json:"created_at"`
-	UpdatedAt   int            `json:"updated_at"`
-	MerchantId  string         `json:"merchant_id"`
-	Name        string         `json:"name"`
-	Slug        string         `json:"slug"`
-	Description string         `json:"description"`
-	Price       int            `json:"price"`
-	Stock       int            `json:"stock"`
-	MainImage   *ImageResponse `json:"main_image"`
+type ProductSimpleResponse struct {
+	Id          string        `json:"id"`
+	MerchantId  string        `json:"merchant_id"`
+	Name        string        `json:"name"`
+	Slug        string        `json:"slug"`
+	Description string        `json:"description"`
+	Price       int           `json:"price"`
+	Stock       int           `json:"stock"`
+	MainImage   ImageResponse `json:"main_image"`
 }
+
+// Request
 
 type ProductCategoryCreateRequest struct {
 	CategoryId string `json:"category_id"`

@@ -1,18 +1,31 @@
 package web
 
-type MerchantResponse struct {
-	Id        string               `json:"id"`
-	CreatedAt int                  `json:"created_at"`
-	UpdatedAt int                  `json:"updated_at"`
-	Email     string               `json:"email"`
-	Name      string               `json:"name"`
-	Slug      string               `json:"slug"`
-	Phone     string               `json:"phone"`
-	Balance   int64                `json:"balance"`
-	MainImage *ImageResponse       `json:"main_image"`
-	Address   *AddressResponse     `json:"address"`
-	Products  []ProductResponseAll `json:"products"`
+// Response
+
+type MerchantDetailResponse struct {
+	Id        string                  `json:"id"`
+	CreatedAt int                     `json:"created_at"`
+	UpdatedAt int                     `json:"updated_at"`
+	Email     string                  `json:"email"`
+	Name      string                  `json:"name"`
+	Slug      string                  `json:"slug"`
+	Phone     string                  `json:"phone"`
+	Balance   int64                   `json:"balance"`
+	MainImage ImageResponse           `json:"main_image"`
+	Address   AddressResponse         `json:"address"`
+	Products  []ProductSimpleResponse `json:"products"`
 }
+
+type MerchantSimpleResponse struct {
+	Id        string          `json:"id"`
+	Name      string          `json:"name"`
+	Slug      string          `json:"slug"`
+	Phone     string          `json:"phone"`
+	MainImage ImageResponse   `json:"main_image"`
+	Address   AddressResponse `json:"address"`
+}
+
+// Request
 
 type MerchantCreateRequest struct {
 	CreatedAt int                   `json:"created_at"`

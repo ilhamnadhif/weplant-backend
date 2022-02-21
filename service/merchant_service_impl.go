@@ -65,26 +65,24 @@ func (service *MerchantServiceImpl) Create(ctx context.Context, request web.Merc
 	}
 }
 
-func (service *MerchantServiceImpl) FindById(ctx context.Context, merchantId string) web.MerchantResponse {
+func (service *MerchantServiceImpl) FindById(ctx context.Context, merchantId string) web.MerchantDetailResponse {
 	merchant, err := service.MerchantRepository.FindById(ctx, merchantId)
 	helper.PanicIfErrorNotFound(err)
 
 	products, err := service.ProductRepository.FindByMerchantId(ctx, merchant.Id.Hex())
 	helper.PanicIfError(err)
 
-	var productsResponse []web.ProductResponseAll
+	var productsResponse []web.ProductSimpleResponse
 	for _, p := range products {
-		productsResponse = append(productsResponse, web.ProductResponseAll{
+		productsResponse = append(productsResponse, web.ProductSimpleResponse{
 			Id:          p.Id.Hex(),
-			CreatedAt:   p.CreatedAt,
-			UpdatedAt:   p.UpdatedAt,
 			MerchantId:  p.MerchantId,
 			Name:        p.Name,
 			Slug:        p.Slug,
 			Description: p.Description,
 			Price:       p.Price,
 			Stock:       p.Stock,
-			MainImage: &web.ImageResponse{
+			MainImage: web.ImageResponse{
 				Id:       p.MainImage.Id.Hex(),
 				FileName: p.MainImage.FileName,
 				URL:      p.MainImage.URL,
@@ -92,7 +90,7 @@ func (service *MerchantServiceImpl) FindById(ctx context.Context, merchantId str
 		})
 	}
 
-	return web.MerchantResponse{
+	return web.MerchantDetailResponse{
 		Id:        merchant.Id.Hex(),
 		CreatedAt: merchant.CreatedAt,
 		UpdatedAt: merchant.UpdatedAt,
@@ -101,12 +99,12 @@ func (service *MerchantServiceImpl) FindById(ctx context.Context, merchantId str
 		Slug:      merchant.Slug,
 		Phone:     merchant.Phone,
 		Balance:   merchant.Balance,
-		MainImage: &web.ImageResponse{
+		MainImage: web.ImageResponse{
 			Id:       merchant.MainImage.Id.Hex(),
 			FileName: merchant.MainImage.FileName,
 			URL:      merchant.MainImage.URL,
 		},
-		Address: &web.AddressResponse{
+		Address: web.AddressResponse{
 			Address:    merchant.Address.Address,
 			City:       merchant.Address.City,
 			Province:   merchant.Address.Province,
@@ -135,13 +133,13 @@ func (service *MerchantServiceImpl) FindManageOrderById(ctx context.Context, mer
 			Description: product.Description,
 			Price:       v.Price,
 			Quantity:    v.Quantity,
-			SubTotal:    v.Price * v.Quantity,
-			MainImage: &web.ImageResponse{
+			TotalPrice:  v.Price * v.Quantity,
+			MainImage: web.ImageResponse{
 				Id:       product.MainImage.Id.Hex(),
 				FileName: product.MainImage.FileName,
 				URL:      product.MainImage.URL,
 			},
-			Address: &web.AddressResponse{
+			Address: web.AddressResponse{
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,

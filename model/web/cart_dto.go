@@ -1,14 +1,15 @@
 package web
 
+// Response
+
 type CartProductResponse struct {
-	ProductId   string         `json:"product_id"`
-	Name        string         `json:"name"`
-	Slug        string         `json:"slug"`
-	Description string         `json:"description"`
-	Price       int            `json:"price"`
-	Quantity    int            `json:"quantity"`
-	SubTotal    int            `json:"sub_total"`
-	MainImage   *ImageResponse `json:"main_image"`
+	ProductId   string        `json:"product_id"`
+	Name        string        `json:"name"`
+	Slug        string        `json:"slug"`
+	Description string        `json:"description"`
+	Price       int           `json:"price"`
+	Quantity    int           `json:"quantity"`
+	MainImage   ImageResponse `json:"main_image"`
 }
 
 type CartResponse struct {
@@ -17,6 +18,8 @@ type CartResponse struct {
 	Products   []CartProductResponse `json:"products"`
 }
 
+// Request
+
 type CartProductCreateRequest struct {
 	CustomerId string `json:"customer_id"`
 	ProductId  string `json:"product_id"`
@@ -24,7 +27,6 @@ type CartProductCreateRequest struct {
 }
 
 type CartProductUpdateRequest struct {
-	UpdatedAt  int    `json:"updated_at"`
 	CustomerId string `json:"customer_id"`
 	ProductId  string `json:"product_id"`
 	Quantity   int    `json:"quantity"`

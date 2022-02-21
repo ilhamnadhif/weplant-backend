@@ -157,7 +157,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 		Status:      resMidtrans.TransactionStatus,
 		Actions:     actionsResponse,
 		TotalPrice:  int(totalPrice),
-		Address:     request.Address,
+		Address:     *request.Address,
 	}
 }
 

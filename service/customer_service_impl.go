@@ -76,8 +76,7 @@ func (service *CustomerServiceImpl) FindCartById(ctx context.Context, customerId
 			Description: findProduct.Description,
 			Price:       findProduct.Price,
 			Quantity:    product.Quantity,
-			SubTotal:    subTotal,
-			MainImage: &web.ImageResponse{
+			MainImage: web.ImageResponse{
 				Id:       findProduct.MainImage.Id.Hex(),
 				FileName: findProduct.MainImage.FileName,
 				URL:      findProduct.MainImage.URL,
@@ -116,8 +115,7 @@ func (service *CustomerServiceImpl) FindTransactionById(ctx context.Context, cus
 				Description: product.Description,
 				Price:       p.Price,
 				Quantity:    p.Quantity,
-				SubTotal:    subTotal,
-				MainImage: &web.ImageResponse{
+				MainImage: web.ImageResponse{
 					Id:       product.MainImage.Id.Hex(),
 					FileName: product.MainImage.FileName,
 					URL:      product.MainImage.URL,
@@ -143,7 +141,7 @@ func (service *CustomerServiceImpl) FindTransactionById(ctx context.Context, cus
 			Actions:     actionResponse,
 			TotalPrice:  totalPrice,
 			Products:    productsResponse,
-			Address: &web.AddressResponse{
+			Address: web.AddressResponse{
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,
@@ -176,13 +174,12 @@ func (service *CustomerServiceImpl) FindOrderById(ctx context.Context, customerI
 			Description: product.Description,
 			Price:       v.Price,
 			Quantity:    v.Quantity,
-			SubTotal:    v.Price * v.Quantity,
-			MainImage: &web.ImageResponse{
+			MainImage: web.ImageResponse{
 				Id:       product.MainImage.Id.Hex(),
 				FileName: product.MainImage.FileName,
 				URL:      product.MainImage.URL,
 			},
-			Address: &web.AddressResponse{
+			Address: web.AddressResponse{
 				Address:    v.Address.Address,
 				City:       v.Address.City,
 				Province:   v.Address.Province,

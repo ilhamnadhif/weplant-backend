@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    image: ilhamnadhif/weplant-backend:1.0
+    image: ilhamnadhif/weplant-backend:2.0
     container_name: weplant-backend
     networks:
       - weplant

@@ -1,23 +1,25 @@
 package web
 
-type CategoryResponse struct {
-	Id        string         `json:"id"`
-	CreatedAt int            `json:"created_at"`
-	UpdatedAt int            `json:"updated_at"`
-	Name      string         `json:"name"`
-	Slug      string         `json:"slug"`
-	MainImage *ImageResponse `json:"main_image"`
+// Response
+
+type CategoryDetailResponse struct {
+	Id        string                  `json:"id"`
+	CreatedAt int                     `json:"created_at"`
+	UpdatedAt int                     `json:"updated_at"`
+	Name      string                  `json:"name"`
+	Slug      string                  `json:"slug"`
+	MainImage ImageResponse           `json:"main_image"`
+	Products  []ProductSimpleResponse `json:"products"`
 }
 
-type CategoryResponseWithProduct struct {
-	Id        string               `json:"id"`
-	CreatedAt int                  `json:"created_at"`
-	UpdatedAt int                  `json:"updated_at"`
-	Name      string               `json:"name"`
-	Slug      string               `json:"slug"`
-	MainImage *ImageResponse       `json:"main_image"`
-	Products  []ProductResponseAll `json:"products"`
+type CategorySimpleResponse struct {
+	Id        string        `json:"id"`
+	Name      string        `json:"name"`
+	Slug      string        `json:"slug"`
+	MainImage ImageResponse `json:"main_image"`
 }
+
+// Request
 
 type CategoryCreateRequest struct {
 	CreatedAt int                 `json:"created_at"`

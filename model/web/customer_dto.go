@@ -1,5 +1,7 @@
 package web
 
+// Response
+
 type CustomerResponse struct {
 	Id        string `json:"id"`
 	CreatedAt int    `json:"created_at"`
@@ -8,6 +10,8 @@ type CustomerResponse struct {
 	UserName  string `json:"user_name"`
 	Phone     string `json:"phone"`
 }
+
+// Request
 
 type CustomerCreateRequest struct {
 	CreatedAt int    `json:"created_at"`

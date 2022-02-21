@@ -43,7 +43,6 @@ func (controller *CartControllerImpl) UpdateProductQuantity(writer http.Response
 
 	var cartRequest web.CartProductUpdateRequest
 	helper.ReadFromRequestBody(request, &cartRequest)
-	cartRequest.UpdatedAt = helper.GetTimeNow()
 	cartRequest.CustomerId = customerId
 	cartRequest.ProductId = productId
 
