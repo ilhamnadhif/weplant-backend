@@ -106,9 +106,32 @@ func (controller *ProductControllerImpl) FindById(writer http.ResponseWriter, re
 func (controller *ProductControllerImpl) FindAll(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	ctx := request.Context()
 
+	var page int
+	var perPage int
+
+	queryPage := request.URL.Query().Get("page")
+	queryPerPage := request.URL.Query().Get("perPage")
+
+	if queryPage == "" {
+		page = 1
+	} else {
+		a, err := strconv.Atoi(queryPage)
+		helper.PanicIfError(err)
+		page = a
+	}
+
+	if queryPerPage == "" {
+		perPage = 10
+	} else {
+		a, err := strconv.Atoi(queryPerPage)
+		helper.PanicIfError(err)
+		perPage = a
+	}
+
 	search := request.URL.Query().Get("search")
+
 	if search != "" {
-		res := controller.ProductService.FindAllWithSearch(ctx, search)
+		res := controller.ProductService.FindAllWithSearch(ctx, search, page, perPage)
 		webResponse := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",
@@ -116,7 +139,7 @@ func (controller *ProductControllerImpl) FindAll(writer http.ResponseWriter, req
 		}
 		helper.WriteToResponseBody(writer, webResponse)
 	} else {
-		res := controller.ProductService.FindAll(ctx)
+		res := controller.ProductService.FindAll(ctx, page, perPage)
 		webResponse := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",

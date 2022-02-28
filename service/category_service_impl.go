@@ -23,7 +23,7 @@ func NewCategoryService(categoryRepository repository.CategoryRepository, cloudi
 	}
 }
 
-func (service *CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategorySimpleResponse {
+func (service *CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryCreateRequestResponse {
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
 
@@ -44,8 +44,10 @@ func (service *CategoryServiceImpl) Create(ctx context.Context, request web.Cate
 		panic(err.Error())
 	}
 
-	return web.CategorySimpleResponse{
+	return web.CategoryCreateRequestResponse{
 		Id:        res.Id.Hex(),
+		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
 		Name:      res.Name,
 		Slug:      res.Slug,
 		MainImage: web.ImageResponse{
@@ -103,9 +105,9 @@ func (service *CategoryServiceImpl) FindAll(ctx context.Context) []web.CategoryS
 	var categoriesResponse []web.CategorySimpleResponse
 	for _, category := range categories {
 		categoriesResponse = append(categoriesResponse, web.CategorySimpleResponse{
-			Id:        category.Id.Hex(),
-			Name:      category.Name,
-			Slug:      category.Slug,
+			Id:   category.Id.Hex(),
+			Name: category.Name,
+			Slug: category.Slug,
 			MainImage: web.ImageResponse{
 				Id:       category.MainImage.Id.Hex(),
 				FileName: category.MainImage.FileName,
@@ -130,7 +132,7 @@ func (service *CategoryServiceImpl) Update(ctx context.Context, request web.Cate
 	return request
 }
 
-func (service *CategoryServiceImpl) UpdateMainImage(ctx context.Context, request web.CategoryUpdateImageRequest) web.CategoryUpdateImageRequest {
+func (service *CategoryServiceImpl) UpdateMainImage(ctx context.Context, request web.CategoryUpdateImageRequest) web.CategoryUpdateImageRequestResponse {
 	category, err := service.CategoryRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
@@ -152,8 +154,15 @@ func (service *CategoryServiceImpl) UpdateMainImage(ctx context.Context, request
 	err = service.CloudinaryRepository.DeleteImage(ctx, category.MainImage.FileName)
 	helper.PanicIfError(err)
 
-	request.MainImage.URL = url
-	return request
+	return web.CategoryUpdateImageRequestResponse{
+		Id:        category.Id.Hex(),
+		UpdatedAt: request.UpdatedAt,
+		MainImage: web.ImageResponse{
+			Id:       category.MainImage.Id.Hex(),
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	}
 }
 
 func (service *CategoryServiceImpl) Delete(ctx context.Context, categoryId string) {

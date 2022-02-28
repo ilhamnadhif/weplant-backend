@@ -12,5 +12,6 @@ type CustomerController interface {
 	FindTransactionById(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	FindOrderById(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	Update(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	UpdateMainImage(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	Delete(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 }

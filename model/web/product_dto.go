@@ -28,6 +28,17 @@ type ProductSimpleResponse struct {
 	MainImage   ImageResponse `json:"main_image"`
 }
 
+type MetadataPaginationResponse struct {
+	CurrentPage int `json:"current_page"`
+	PerPage     int `json:"per_page"`
+	TotalData   int `json:"total_data"`
+}
+
+type ProductFindAllResponse struct {
+	Products []ProductSimpleResponse    `json:"products"`
+	Metadata MetadataPaginationResponse `json:"metadata"`
+}
+
 // Request
 
 type ProductCategoryCreateRequest struct {
@@ -45,6 +56,21 @@ type ProductCreateRequest struct {
 	Stock       int                            `json:"stock"`
 	MainImage   *ImageCreateRequest            `json:"main_image"`
 	Images      []ImageCreateRequest           `json:"images"`
+	Categories  []ProductCategoryCreateRequest `json:"categories"`
+}
+
+type ProductCreateRequestResponse struct {
+	Id          string                         `json:"id"`
+	CreatedAt   int                            `json:"created_at"`
+	UpdatedAt   int                            `json:"updated_at"`
+	MerchantId  string                         `json:"merchant_id"`
+	Name        string                         `json:"name"`
+	Slug        string                         `json:"slug"`
+	Description string                         `json:"description"`
+	Price       int                            `json:"price"`
+	Stock       int                            `json:"stock"`
+	MainImage   ImageResponse                  `json:"main_image"`
+	Images      []ImageResponse                `json:"images"`
 	Categories  []ProductCategoryCreateRequest `json:"categories"`
 }
 
@@ -66,4 +92,10 @@ type ProductUpdateImageRequest struct {
 	Id        string              `json:"id"`
 	UpdatedAt int                 `json:"updated_at"`
 	MainImage *ImageUpdateRequest `json:"main_image"`
+}
+
+type ProductUpdateImageRequestResponse struct {
+	Id        string        `json:"id"`
+	UpdatedAt int           `json:"updated_at"`
+	MainImage ImageResponse `json:"main_image"`
 }

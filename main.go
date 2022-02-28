@@ -32,7 +32,7 @@ func main() {
 	swagger, err := fs.Sub(spec, "swagger")
 	helper.PanicIfError(err)
 
-	//pkg.GoDotENV()
+	pkg.GoDotENV()
 
 	client := config.GetConnection()
 	defer config.CloseConnection(client)
@@ -157,6 +157,7 @@ func main() {
 	router.GET("/api/v1/customers/:customerId/transactions", middleware.AuthMiddleware(customerController.FindTransactionById, "customer"))
 	router.GET("/api/v1/customers/:customerId/orders", middleware.AuthMiddleware(customerController.FindOrderById, "customer"))
 	router.PUT("/api/v1/customers/:customerId", middleware.AuthMiddleware(customerController.Update, "customer"))
+	router.PATCH("/api/v1/customers/:customerId/image", middleware.AuthMiddleware(customerController.UpdateMainImage, "customer"))
 	router.DELETE("/api/v1/customers/:customerId", middleware.AuthMiddleware(customerController.Delete, "customer"))
 
 	router.POST("/api/v1/carts/:customerId", middleware.AuthMiddleware(cartController.PushProductToCart, "customer"))

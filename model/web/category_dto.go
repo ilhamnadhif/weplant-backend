@@ -29,6 +29,15 @@ type CategoryCreateRequest struct {
 	MainImage *ImageCreateRequest `json:"main_image"`
 }
 
+type CategoryCreateRequestResponse struct {
+	Id        string        `json:"id"`
+	CreatedAt int           `json:"created_at"`
+	UpdatedAt int           `json:"updated_at"`
+	Name      string        `json:"name"`
+	Slug      string        `json:"slug"`
+	MainImage ImageResponse `json:"main_image"`
+}
+
 type CategoryUpdateRequest struct {
 	Id        string `json:"id"`
 	UpdatedAt int    `json:"updated_at"`
@@ -39,4 +48,10 @@ type CategoryUpdateImageRequest struct {
 	Id        string              `json:"id"`
 	UpdatedAt int                 `json:"updated_at"`
 	MainImage *ImageUpdateRequest `json:"main_image"`
+}
+
+type CategoryUpdateImageRequestResponse struct {
+	Id        string        `json:"id"`
+	UpdatedAt int           `json:"updated_at"`
+	MainImage ImageResponse `json:"main_image"`
 }
