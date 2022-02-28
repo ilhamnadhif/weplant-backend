@@ -40,9 +40,9 @@ func (repository *ProductRepositoryImpl) FindById(ctx context.Context, productId
 	return product, nil
 }
 
-func (repository *ProductRepositoryImpl) FindAll(ctx context.Context) ([]schema.Product, error) {
+func (repository *ProductRepositoryImpl) FindAll(ctx context.Context, skip int, limit int) ([]schema.Product, error) {
 	var products []schema.Product
-	cursor, err := repository.Collection.Find(ctx, bson.D{})
+	cursor, err := repository.Collection.Find(ctx, bson.D{}, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		return products, err
 	}
@@ -53,13 +53,16 @@ func (repository *ProductRepositoryImpl) FindAll(ctx context.Context) ([]schema.
 	return products, nil
 }
 
-func (repository *ProductRepositoryImpl) FindAllWithSearch(ctx context.Context, search string) ([]schema.Product, error) {
+func (repository *ProductRepositoryImpl) FindAllWithSearch(ctx context.Context, search string, skip int, limit int) ([]schema.Product, error) {
 	var products []schema.Product
-	cursor, err := repository.Collection.Find(ctx, bson.D{{"$and", bson.A{
-		bson.D{{"$text", bson.D{{
-			"$search", search,
-		}}}},
-	}}})
+	cursor, err := repository.Collection.Find(ctx, bson.D{
+		{"$text", bson.D{
+			{
+				"$search", search,
+			},
+		},
+		},
+	}, options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)))
 	if err != nil {
 		return products, err
 	}
@@ -152,6 +155,14 @@ func (repository *ProductRepositoryImpl) Delete(ctx context.Context, productId s
 		return err
 	}
 	return nil
+}
+
+func (repository *ProductRepositoryImpl) CountDocuments(ctx context.Context) (int, error) {
+	itemCount, err := repository.Collection.CountDocuments(ctx, bson.D{})
+	if err != nil {
+		return int(itemCount), err
+	}
+	return int(itemCount), nil
 }
 
 // merchant

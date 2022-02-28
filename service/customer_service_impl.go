@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"weplant-backend/helper"
 	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
@@ -31,6 +32,11 @@ func (service *CustomerServiceImpl) Create(ctx context.Context, request web.Cust
 		Password:  pkg.HashPassword(request.Password),
 		UserName:  request.UserName,
 		Phone:     request.Phone,
+		MainImage: &schema.Image{
+			Id:       primitive.NewObjectID(),
+			FileName: "",
+			URL:      "",
+		},
 	})
 	helper.PanicIfError(err)
 	token := pkg.GenerateToken(web.JWTPayload{
@@ -55,6 +61,11 @@ func (service *CustomerServiceImpl) FindById(ctx context.Context, customerId str
 		Email:     customer.Email,
 		UserName:  customer.UserName,
 		Phone:     customer.Phone,
+		MainImage: web.ImageResponse{
+			Id:       customer.MainImage.Id.Hex(),
+			FileName: customer.MainImage.FileName,
+			URL:      customer.MainImage.URL,
+		},
 	}
 }
 
@@ -207,6 +218,41 @@ func (service *CustomerServiceImpl) Update(ctx context.Context, request web.Cust
 	})
 	helper.PanicIfError(err)
 	return request
+}
+func (service *CustomerServiceImpl) UpdateMainImage(ctx context.Context, request web.CustomerUpdateImageRequest) web.CustomerUpdateImageRequestResponse {
+	customer, err := service.CustomerRepository.FindById(ctx, request.Id)
+	helper.PanicIfError(err)
+
+	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
+	helper.PanicIfError(err)
+
+	_, err = service.CustomerRepository.Update(ctx, schema.Customer{
+		Id:        customer.Id,
+		UpdatedAt: request.UpdatedAt,
+		MainImage: &schema.Image{
+			Id:       customer.MainImage.Id,
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	})
+	helper.PanicIfError(err)
+
+	if customer.MainImage != nil {
+		err = service.CloudinaryRepository.DeleteImage(ctx, customer.MainImage.FileName)
+		helper.PanicIfError(err)
+	}
+
+	request.MainImage.URL = url
+	return web.CustomerUpdateImageRequestResponse{
+		Id:        customer.Id.Hex(),
+		UpdatedAt: request.UpdatedAt,
+		MainImage: web.ImageResponse{
+			Id:       customer.MainImage.Id.Hex(),
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	}
+
 }
 
 func (service *CustomerServiceImpl) Delete(ctx context.Context, customerId string) {

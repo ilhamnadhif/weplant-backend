@@ -175,7 +175,7 @@ func (service *MerchantServiceImpl) Update(ctx context.Context, request web.Merc
 	return request
 }
 
-func (service *MerchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest) web.MerchantUpdateImageRequest {
+func (service *MerchantServiceImpl) UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest) web.MerchantUpdateImageRequestResponse {
 	merchant, err := service.MerchantRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
@@ -197,8 +197,15 @@ func (service *MerchantServiceImpl) UpdateMainImage(ctx context.Context, request
 	err = service.CloudinaryRepository.DeleteImage(ctx, merchant.MainImage.FileName)
 	helper.PanicIfError(err)
 
-	request.MainImage.URL = url
-	return request
+	return web.MerchantUpdateImageRequestResponse{
+		Id:        merchant.Id.Hex(),
+		UpdatedAt: request.UpdatedAt,
+		MainImage: web.ImageResponse{
+			Id:       merchant.Id.Hex(),
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	}
 }
 
 func (service *MerchantServiceImpl) Delete(ctx context.Context, merchantId string) {

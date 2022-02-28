@@ -10,6 +10,7 @@ type Customer struct {
 	Password     string             `bson:"password,omitempty"`
 	UserName     string             `bson:"user_name,omitempty"`
 	Phone        string             `bson:"phone,omitempty"`
+	MainImage    *Image             `bson:"main_image,omitempty"`
 	Carts        []CartProduct      `bson:"carts,omitempty"`
 	Transactions []Transaction      `bson:"transactions,omitempty"`
 	Orders       []OrderProduct     `bson:"orders,omitempty"`

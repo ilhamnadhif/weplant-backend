@@ -10,6 +10,6 @@ type MerchantService interface {
 	FindById(ctx context.Context, merchantId string) web.MerchantDetailResponse
 	FindManageOrderById(ctx context.Context, merchantId string) web.ManageOrderResponse
 	Update(ctx context.Context, request web.MerchantUpdateRequest) web.MerchantUpdateRequest
-	UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest) web.MerchantUpdateImageRequest
+	UpdateMainImage(ctx context.Context, request web.MerchantUpdateImageRequest) web.MerchantUpdateImageRequestResponse
 	Delete(ctx context.Context, merchantId string)
 }

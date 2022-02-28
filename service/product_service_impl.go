@@ -27,7 +27,7 @@ func NewProductService(productRepository repository.ProductRepository, cloudinar
 	}
 }
 
-func (service *ProductServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest) web.ProductSimpleResponse {
+func (service *ProductServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest) web.ProductCreateRequestResponse {
 	merchant, err := service.MerchantRepository.FindById(ctx, request.MerchantId)
 	helper.PanicIfErrorNotFound(err)
 
@@ -90,24 +90,19 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 		})
 	}
 
-	var categoriesResponse []web.CategorySimpleResponse
+	var categoriesResponse []web.ProductCategoryCreateRequest
 	for _, c := range res.Categories {
 		category, err := service.CategoryRepository.FindById(ctx, c.CategoryId)
 		helper.PanicIfError(err)
-		categoriesResponse = append(categoriesResponse, web.CategorySimpleResponse{
-			Id:        category.Id.Hex(),
-			Name:      category.Name,
-			Slug:      category.Slug,
-			MainImage: web.ImageResponse{
-				Id:       category.MainImage.Id.Hex(),
-				FileName: category.MainImage.FileName,
-				URL:      category.MainImage.URL,
-			},
+		categoriesResponse = append(categoriesResponse, web.ProductCategoryCreateRequest{
+			CategoryId: category.Id.Hex(),
 		})
 	}
 
-	return web.ProductSimpleResponse{
+	return web.ProductCreateRequestResponse{
 		Id:          res.Id.Hex(),
+		CreatedAt:   res.CreatedAt,
+		UpdatedAt:   res.UpdatedAt,
 		MerchantId:  merchant.Id.Hex(),
 		Name:        res.Name,
 		Slug:        res.Slug,
@@ -119,6 +114,8 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 			FileName: res.MainImage.FileName,
 			URL:      res.MainImage.URL,
 		},
+		Images:     imagesResponse,
+		Categories: categoriesResponse,
 	}
 }
 
@@ -143,9 +140,9 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 		category, err := service.CategoryRepository.FindById(ctx, v.CategoryId)
 		helper.PanicIfError(err)
 		categoriesResponse = append(categoriesResponse, web.CategorySimpleResponse{
-			Id:        category.Id.Hex(),
-			Name:      category.Name,
-			Slug:      category.Slug,
+			Id:   category.Id.Hex(),
+			Name: category.Name,
+			Slug: category.Slug,
 			MainImage: web.ImageResponse{
 				Id:       category.MainImage.Id.Hex(),
 				FileName: category.MainImage.FileName,
@@ -171,10 +168,10 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 		Images:     imagesResponse,
 		Categories: categoriesResponse,
 		Merchant: web.MerchantSimpleResponse{
-			Id:        merchant.Id.Hex(),
-			Name:      merchant.Name,
-			Slug:      merchant.Slug,
-			Phone:     merchant.Phone,
+			Id:    merchant.Id.Hex(),
+			Name:  merchant.Name,
+			Slug:  merchant.Slug,
+			Phone: merchant.Phone,
 			MainImage: web.ImageResponse{
 				Id:       merchant.MainImage.Id.Hex(),
 				FileName: merchant.MainImage.FileName,
@@ -190,8 +187,14 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 	}
 }
 
-func (service *ProductServiceImpl) FindAll(ctx context.Context) []web.ProductSimpleResponse {
-	products, err := service.ProductRepository.FindAll(ctx)
+func (service *ProductServiceImpl) FindAll(ctx context.Context, page int, perPage int) web.ProductFindAllResponse {
+	skip := (page - 1) * perPage
+	limit := perPage
+
+	products, err := service.ProductRepository.FindAll(ctx, skip, limit)
+	helper.PanicIfError(err)
+
+	itemCount, err := service.ProductRepository.CountDocuments(ctx)
 	helper.PanicIfError(err)
 
 	var productsResponse []web.ProductSimpleResponse
@@ -212,10 +215,24 @@ func (service *ProductServiceImpl) FindAll(ctx context.Context) []web.ProductSim
 		})
 	}
 
-	return productsResponse
+	return web.ProductFindAllResponse{
+		Products: productsResponse,
+		Metadata: web.MetadataPaginationResponse{
+			CurrentPage: page,
+			PerPage:     perPage,
+			TotalData:   itemCount,
+		},
+	}
 }
-func (service *ProductServiceImpl) FindAllWithSearch(ctx context.Context, search string) []web.ProductSimpleResponse {
-	products, err := service.ProductRepository.FindAllWithSearch(ctx, search)
+func (service *ProductServiceImpl) FindAllWithSearch(ctx context.Context, search string, page int, perPage int) web.ProductFindAllResponse {
+
+	skip := (page - 1) * perPage
+	limit := perPage
+
+	products, err := service.ProductRepository.FindAllWithSearch(ctx, search, skip, limit)
+	helper.PanicIfError(err)
+
+	itemCount, err := service.ProductRepository.CountDocuments(ctx)
 	helper.PanicIfError(err)
 
 	var productsResponse []web.ProductSimpleResponse
@@ -236,7 +253,14 @@ func (service *ProductServiceImpl) FindAllWithSearch(ctx context.Context, search
 		})
 	}
 
-	return productsResponse
+	return web.ProductFindAllResponse{
+		Products: productsResponse,
+		Metadata: web.MetadataPaginationResponse{
+			CurrentPage: page,
+			PerPage:     perPage,
+			TotalData:   itemCount,
+		},
+	}
 }
 
 func (service *ProductServiceImpl) Update(ctx context.Context, request web.ProductUpdateRequest) web.ProductUpdateRequest {
@@ -266,7 +290,7 @@ func (service *ProductServiceImpl) Update(ctx context.Context, request web.Produ
 	return request
 }
 
-func (service *ProductServiceImpl) UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest) web.ProductUpdateImageRequest {
+func (service *ProductServiceImpl) UpdateMainImage(ctx context.Context, request web.ProductUpdateImageRequest) web.ProductUpdateImageRequestResponse {
 	product, err := service.ProductRepository.FindById(ctx, request.Id)
 	helper.PanicIfErrorNotFound(err)
 
@@ -288,8 +312,15 @@ func (service *ProductServiceImpl) UpdateMainImage(ctx context.Context, request 
 	err = service.CloudinaryRepository.DeleteImage(ctx, product.MainImage.FileName)
 	helper.PanicIfError(err)
 
-	request.MainImage.URL = url
-	return request
+	return web.ProductUpdateImageRequestResponse{
+		Id:        product.Id.Hex(),
+		UpdatedAt: request.UpdatedAt,
+		MainImage: web.ImageResponse{
+			Id:       product.MainImage.Id.Hex(),
+			FileName: request.MainImage.FileName,
+			URL:      url,
+		},
+	}
 }
 
 func (service *ProductServiceImpl) PushImageIntoImages(ctx context.Context, productId string, request []web.ImageCreateRequest) []web.ImageCreateRequest {

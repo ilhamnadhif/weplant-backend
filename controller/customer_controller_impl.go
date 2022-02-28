@@ -106,6 +106,31 @@ func (controller *CustomerControllerImpl) Update(writer http.ResponseWriter, req
 	helper.WriteToResponseBody(writer, webResponse)
 }
 
+func (controller *CustomerControllerImpl) UpdateMainImage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	ctx := request.Context()
+	customerId := params.ByName("customerId")
+
+	file, fileHeader, err := request.FormFile("image")
+	helper.PanicIfError(err)
+
+	filename := helper.GetFileName(fileHeader.Filename)
+
+	res := controller.CustomerService.UpdateMainImage(ctx, web.CustomerUpdateImageRequest{
+		Id:        customerId,
+		UpdatedAt: helper.GetTimeNow(),
+		MainImage: &web.ImageUpdateRequest{
+			FileName: filename,
+			URL:      file,
+		},
+	})
+	webResponse := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   res,
+	}
+	helper.WriteToResponseBody(writer, webResponse)
+}
+
 func (controller *CustomerControllerImpl) Delete(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	ctx := request.Context()
 	customerId := params.ByName("customerId")

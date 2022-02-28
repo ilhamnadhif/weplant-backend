@@ -52,3 +52,9 @@ type MerchantUpdateImageRequest struct {
 	UpdatedAt int                 `json:"updated_at"`
 	MainImage *ImageUpdateRequest `json:"main_image"`
 }
+
+type MerchantUpdateImageRequestResponse struct {
+	Id        string        `json:"id"`
+	UpdatedAt int           `json:"updated_at"`
+	MainImage ImageResponse `json:"main_image"`
+}
