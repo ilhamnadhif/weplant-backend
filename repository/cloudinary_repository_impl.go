@@ -23,7 +23,7 @@ func (repository *CloudinaryRepositoryImpl) UploadImage(ctx context.Context, fil
 	res, err := repository.Cloud.Upload.Upload(ctx, file, uploader.UploadParams{
 		PublicID: cloudFolder + "/" + filename,
 	})
-	url = res.URL
+	url = res.SecureURL
 	if err != nil {
 		return url, err
 	}

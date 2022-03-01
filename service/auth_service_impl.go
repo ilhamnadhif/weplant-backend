@@ -12,14 +12,12 @@ import (
 type AuthServiceImpl struct {
 	MerchantRepository repository.MerchantRepository
 	CustomerRepository repository.CustomerRepository
-	AdminRepository    repository.AdminRepository
 }
 
-func NewAuthService(merchantRepository repository.MerchantRepository, customerRepository repository.CustomerRepository, adminRepository repository.AdminRepository) AuthService {
+func NewAuthService(merchantRepository repository.MerchantRepository, customerRepository repository.CustomerRepository) AuthService {
 	return &AuthServiceImpl{
 		MerchantRepository: merchantRepository,
 		CustomerRepository: customerRepository,
-		AdminRepository:    adminRepository,
 	}
 }
 
@@ -58,20 +56,3 @@ func (service *AuthServiceImpl) LoginMerchant(ctx context.Context, request web.L
 	}
 }
 
-func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, request web.LoginRequest) web.TokenResponse {
-	admin, err := service.AdminRepository.FindByEmail(ctx, request.Email)
-	helper.PanicIfError(err)
-	if !pkg.CheckPasswordHash(request.Password, admin.Password) {
-		panic(errors.New("password not match").Error())
-	}
-
-	token := pkg.GenerateToken(web.JWTPayload{
-		Id:   admin.Id.Hex(),
-		Role: "admin",
-	})
-	return web.TokenResponse{
-		Id:    admin.Id.Hex(),
-		Role:  "admin",
-		Token: token,
-	}
-}

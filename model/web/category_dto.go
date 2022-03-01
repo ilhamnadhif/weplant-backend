@@ -8,50 +8,28 @@ type CategoryDetailResponse struct {
 	UpdatedAt int                     `json:"updated_at"`
 	Name      string                  `json:"name"`
 	Slug      string                  `json:"slug"`
-	MainImage ImageResponse           `json:"main_image"`
 	Products  []ProductSimpleResponse `json:"products"`
 }
 
 type CategorySimpleResponse struct {
-	Id        string        `json:"id"`
-	Name      string        `json:"name"`
-	Slug      string        `json:"slug"`
-	MainImage ImageResponse `json:"main_image"`
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
 // Request
 
 type CategoryCreateRequest struct {
-	CreatedAt int                 `json:"created_at"`
-	UpdatedAt int                 `json:"updated_at"`
-	Name      string              `json:"name"`
-	Slug      string              `json:"slug"`
-	MainImage *ImageCreateRequest `json:"main_image"`
+	CreatedAt int    `json:"created_at"`
+	UpdatedAt int    `json:"updated_at"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
 }
 
 type CategoryCreateRequestResponse struct {
-	Id        string        `json:"id"`
-	CreatedAt int           `json:"created_at"`
-	UpdatedAt int           `json:"updated_at"`
-	Name      string        `json:"name"`
-	Slug      string        `json:"slug"`
-	MainImage ImageResponse `json:"main_image"`
-}
-
-type CategoryUpdateRequest struct {
 	Id        string `json:"id"`
+	CreatedAt int    `json:"created_at"`
 	UpdatedAt int    `json:"updated_at"`
 	Name      string `json:"name"`
-}
-
-type CategoryUpdateImageRequest struct {
-	Id        string              `json:"id"`
-	UpdatedAt int                 `json:"updated_at"`
-	MainImage *ImageUpdateRequest `json:"main_image"`
-}
-
-type CategoryUpdateImageRequestResponse struct {
-	Id        string        `json:"id"`
-	UpdatedAt int           `json:"updated_at"`
-	MainImage ImageResponse `json:"main_image"`
+	Slug      string `json:"slug"`
 }

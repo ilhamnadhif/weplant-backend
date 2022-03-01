@@ -50,18 +50,3 @@ func (controller *AuthControllerImpl) LoginMerchant(writer http.ResponseWriter, 
 	helper.WriteToResponseBody(writer, webResponse)
 }
 
-func (controller *AuthControllerImpl) LoginAdmin(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	ctx := request.Context()
-
-	var loginRequest web.LoginRequest
-	helper.ReadFromRequestBody(request, &loginRequest)
-
-	admin := controller.AuthService.LoginAdmin(ctx, loginRequest)
-
-	webResponse := web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   admin,
-	}
-	helper.WriteToResponseBody(writer, webResponse)
-}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/fs"
@@ -18,7 +17,6 @@ import (
 	"weplant-backend/exception"
 	"weplant-backend/helper"
 	"weplant-backend/middleware"
-	"weplant-backend/model/schema"
 	"weplant-backend/pkg"
 	"weplant-backend/repository"
 	"weplant-backend/service"
@@ -74,18 +72,12 @@ func main() {
 		Keys:    bson.D{{Key: "email", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
-	adminCollection := database.Collection("admin")
-	adminCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    bson.D{{Key: "email", Value: 1}},
-		Options: options.Index().SetUnique(true),
-	})
 
 	// repository
 	categoryRepository := repository.NewCategoryRepository(categoryCollection)
 	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	productRepository := repository.NewProductRepository(productCollection)
 	customerRepository := repository.NewCustomerRepository(customerCollection)
-	adminRepository := repository.NewAdminRepository(adminCollection)
 	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
 	midtransRepository := repository.NewMidtransRepository(midtransKey)
 
@@ -96,7 +88,7 @@ func main() {
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
 	transactionService := service.NewTransactionService(customerRepository, productRepository, midtransRepository, merchantRepository)
-	authService := service.NewAuthService(merchantRepository, customerRepository, adminRepository)
+	authService := service.NewAuthService(merchantRepository, customerRepository)
 
 	// controller
 	categoryController := controller.NewCategoryController(categoryService)
@@ -109,20 +101,6 @@ func main() {
 
 	// middleware
 
-	// create admin
-	res, err := adminRepository.FindAll(context.Background())
-	helper.PanicIfError(err)
-	if len(res) == 0 {
-		_, err = adminRepository.Create(context.Background(), schema.Admin{
-			Id:        primitive.ObjectID{},
-			CreatedAt: helper.GetTimeNow(),
-			UpdatedAt: helper.GetTimeNow(),
-			Email:     "admin@admin.com",
-			Password:  pkg.HashPassword("admin999"),
-		})
-		helper.PanicIfError(err)
-	}
-
 	router := httprouter.New()
 
 	router.PanicHandler = exception.ErrorHandler
@@ -130,10 +108,7 @@ func main() {
 
 	router.GET("/api/v1/categories/:categoryId", categoryController.FindById)
 	router.GET("/api/v1/categories", categoryController.FindAll)
-	router.POST("/api/v1/categories", middleware.AuthMiddleware(categoryController.Create, "admin"))
-	router.PUT("/api/v1/categories/:categoryId", middleware.AuthMiddleware(categoryController.Update, "admin"))
-	router.PATCH("/api/v1/categories/:categoryId/image", middleware.AuthMiddleware(categoryController.UpdateMainImage, "admin"))
-	router.DELETE("/api/v1/categories/:categoryId", middleware.AuthMiddleware(categoryController.Delete, "admin"))
+	router.POST("/api/v1/categories", middleware.AuthMiddleware(categoryController.Create, "merchant"))
 
 	router.POST("/api/v1/merchants", merchantController.Create)
 	router.GET("/api/v1/merchants/:merchantId", merchantController.FindById)
@@ -170,7 +145,6 @@ func main() {
 
 	router.POST("/api/v1/auth/merchant", authController.LoginMerchant)
 	router.POST("/api/v1/auth/customer", authController.LoginCustomer)
-	router.POST("/api/v1/auth/admin", authController.LoginAdmin)
 
 	port := os.Getenv("PORT")
 	if port == "" {

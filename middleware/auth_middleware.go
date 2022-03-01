@@ -25,13 +25,6 @@ func  AuthMiddleware(handle httprouter.Handle, role string) httprouter.Handle {
 		}
 
 		switch role {
-		case "admin":
-			if payload.Role != "admin" {
-				panic(exception.NewUnauthorizedError("you don't have permission to access this resource"))
-				return
-			} else {
-				handle(writer, request, params)
-			}
 		case "merchant":
 			if payload.Role != "merchant" {
 				panic(exception.NewUnauthorizedError("you don't have permission to access this resource"))

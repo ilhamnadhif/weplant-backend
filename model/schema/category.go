@@ -8,5 +8,4 @@ type Category struct {
 	UpdatedAt int                `bson:"updated_at,omitempty"`
 	Name      string             `bson:"name,omitempty"`
 	Slug      string             `bson:"slug"`
-	MainImage *Image             `bson:"image,omitempty"`
 }

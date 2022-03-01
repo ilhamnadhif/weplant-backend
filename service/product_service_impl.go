@@ -143,11 +143,6 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 			Id:   category.Id.Hex(),
 			Name: category.Name,
 			Slug: category.Slug,
-			MainImage: web.ImageResponse{
-				Id:       category.MainImage.Id.Hex(),
-				FileName: category.MainImage.FileName,
-				URL:      category.MainImage.URL,
-			},
 		})
 	}
 
