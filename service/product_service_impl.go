@@ -29,16 +29,21 @@ func NewProductService(productRepository repository.ProductRepository, cloudinar
 
 func (service *ProductServiceImpl) Create(ctx context.Context, request web.ProductCreateRequest) web.ProductCreateRequestResponse {
 	merchant, err := service.MerchantRepository.FindById(ctx, request.MerchantId)
-	helper.PanicIfErrorNotFound(err)
+	helper.PanicIfError(err)
 
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)
+
+	var categoriesResponse []web.ProductCategoryCreateRequest
 
 	var categoriesCreateRequest []schema.ProductCategory
 	for _, category := range request.Categories {
 		c, err := service.CategoryRepository.FindById(ctx, category.CategoryId)
 		helper.PanicIfErrorNotFound(err)
 		categoriesCreateRequest = append(categoriesCreateRequest, schema.ProductCategory{
+			CategoryId: c.Id.Hex(),
+		})
+		categoriesResponse = append(categoriesResponse, web.ProductCategoryCreateRequest{
 			CategoryId: c.Id.Hex(),
 		})
 	}
@@ -90,15 +95,6 @@ func (service *ProductServiceImpl) Create(ctx context.Context, request web.Produ
 		})
 	}
 
-	var categoriesResponse []web.ProductCategoryCreateRequest
-	for _, c := range res.Categories {
-		category, err := service.CategoryRepository.FindById(ctx, c.CategoryId)
-		helper.PanicIfError(err)
-		categoriesResponse = append(categoriesResponse, web.ProductCategoryCreateRequest{
-			CategoryId: category.Id.Hex(),
-		})
-	}
-
 	return web.ProductCreateRequestResponse{
 		Id:          res.Id.Hex(),
 		CreatedAt:   res.CreatedAt,
@@ -124,7 +120,7 @@ func (service *ProductServiceImpl) FindById(ctx context.Context, productId strin
 	helper.PanicIfErrorNotFound(err)
 
 	merchant, err := service.MerchantRepository.FindById(ctx, product.MerchantId)
-	helper.PanicIfErrorNotFound(err)
+	helper.PanicIfError(err)
 
 	var imagesResponse []web.ImageResponse
 	for _, img := range product.Images {
@@ -265,7 +261,7 @@ func (service *ProductServiceImpl) Update(ctx context.Context, request web.Produ
 	var categoriesUpdateRequest []schema.ProductCategory
 	for _, v := range request.Categories {
 		category, err := service.CategoryRepository.FindById(ctx, v.CategoryId)
-		helper.PanicIfErrorNotFound(err)
+		helper.PanicIfError(err)
 		categoriesUpdateRequest = append(categoriesUpdateRequest, schema.ProductCategory{
 			CategoryId: category.Id.Hex(),
 		})

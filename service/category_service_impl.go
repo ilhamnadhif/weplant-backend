@@ -9,15 +9,13 @@ import (
 )
 
 type CategoryServiceImpl struct {
-	CategoryRepository   repository.CategoryRepository
-	CloudinaryRepository repository.CloudinaryRepository
-	ProductRepository    repository.ProductRepository
+	CategoryRepository repository.CategoryRepository
+	ProductRepository  repository.ProductRepository
 }
 
-func NewCategoryService(categoryRepository repository.CategoryRepository, cloudinaryRepository repository.CloudinaryRepository, productRepository repository.ProductRepository) CategoryService {
+func NewCategoryService(categoryRepository repository.CategoryRepository, productRepository repository.ProductRepository) CategoryService {
 	return &CategoryServiceImpl{
 		CategoryRepository:   categoryRepository,
-		CloudinaryRepository: cloudinaryRepository,
 		ProductRepository:    productRepository,
 	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"weplant-backend/helper"
 	"weplant-backend/model/schema"
@@ -39,6 +40,8 @@ func (service *CustomerServiceImpl) Create(ctx context.Context, request web.Cust
 		},
 	})
 	helper.PanicIfError(err)
+
+	fmt.Println(res)
 	token := pkg.GenerateToken(web.JWTPayload{
 		Id:   res.Id.Hex(),
 		Role: "customer",
@@ -221,7 +224,7 @@ func (service *CustomerServiceImpl) Update(ctx context.Context, request web.Cust
 }
 func (service *CustomerServiceImpl) UpdateMainImage(ctx context.Context, request web.CustomerUpdateImageRequest) web.CustomerUpdateImageRequestResponse {
 	customer, err := service.CustomerRepository.FindById(ctx, request.Id)
-	helper.PanicIfError(err)
+	helper.PanicIfErrorNotFound(err)
 
 	url, err := service.CloudinaryRepository.UploadImage(ctx, request.MainImage.FileName, request.MainImage.URL)
 	helper.PanicIfError(err)

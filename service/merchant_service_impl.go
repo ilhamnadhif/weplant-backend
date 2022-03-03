@@ -215,7 +215,7 @@ func (service *MerchantServiceImpl) Delete(ctx context.Context, merchantId strin
 	products, err := service.ProductRepository.FindByMerchantId(ctx, merchant.Id.Hex())
 	helper.PanicIfError(err)
 
-	if products != nil {
+	if len(products) > 0 {
 		panic("tidak dapat menghapus toko ini karena didalamnya masih terdapat produk")
 	}
 

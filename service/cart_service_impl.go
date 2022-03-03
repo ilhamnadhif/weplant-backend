@@ -25,7 +25,7 @@ func (service *CartServiceImpl) PushProductToCart(ctx context.Context, request w
 	helper.PanicIfErrorNotFound(err)
 
 	product, err := service.ProductRepository.FindById(ctx, request.ProductId)
-	helper.PanicIfErrorNotFound(err)
+	helper.PanicIfError(err)
 
 	err = service.CustomerRepository.PushProductToCart(ctx, customer.Id.Hex(), schema.CartProduct{
 		ProductId: product.Id.Hex(),

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
@@ -31,7 +32,7 @@ func NewTransactionService(customerRepository repository.CustomerRepository, pro
 
 func (service *TransactionServiceImpl) Create(ctx context.Context, request web.TransactionCreateRequest) web.TransactionCreateRequestResponse {
 	customer, err := service.CustomerRepository.FindById(ctx, request.CustomerId)
-	helper.PanicIfError(err)
+	helper.PanicIfErrorNotFound(err)
 
 	var productDetailMidtrans []midtrans.ItemDetails
 	var productDetailTransaction []schema.TransactionProduct
@@ -162,6 +163,22 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 }
 
 func (service *TransactionServiceImpl) Cancel(ctx context.Context, customerId string, transactionId string) {
+	customer, err := service.CustomerRepository.FindById(ctx, customerId)
+	helper.PanicIfErrorNotFound(err)
+
+	var found bool
+
+	for _, transaction := range customer.Transactions {
+		if transaction.Id.Hex() == transactionId {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		helper.PanicIfErrorNotFound(errors.New(fmt.Sprintf("transaction id %s not found in customer id %s ", customerId, transactionId)))
+	}
+
 	_, errMidtrans := service.MidtransRepository.CancelTransaction(transactionId)
 	if errMidtrans != nil {
 		panic(errMidtrans.GetMessage())

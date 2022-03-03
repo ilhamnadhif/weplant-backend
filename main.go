@@ -5,18 +5,15 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/fs"
 	"net/http"
 	"os"
-	"weplant-backend/config"
+	"weplant-backend/app"
 	"weplant-backend/controller"
-	"weplant-backend/exception"
 	"weplant-backend/helper"
-	"weplant-backend/middleware"
 	"weplant-backend/pkg"
 	"weplant-backend/repository"
 	"weplant-backend/service"
@@ -32,15 +29,15 @@ func main() {
 
 	pkg.GoDotENV()
 
-	client := config.GetConnection()
-	defer config.CloseConnection(client)
+	client := app.GetConnection()
+	defer app.CloseConnection(client)
 	database := client.Database("weplant-backend")
 
 	// cloudinary get cloud
-	cloud := config.GetCloud()
+	cloud := app.GetCloud()
 
 	// get xendit key
-	midtransKey := config.GetMidtransKey()
+	midtransKey := app.GetMidtransKey()
 
 	// collection
 	merchantCollection := database.Collection("merchant")
@@ -54,11 +51,6 @@ func main() {
 			Options: options.Index().SetUnique(true),
 		},
 	})
-	categoryCollection := database.Collection("category")
-	categoryCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    bson.D{{Key: "slug", Value: 1}},
-		Options: options.Index().SetUnique(true),
-	})
 	productCollection := database.Collection("product")
 	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "slug", Value: 1}},
@@ -67,6 +59,11 @@ func main() {
 	productCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.D{{"name", "text"}},
 	})
+	categoryCollection := database.Collection("category")
+	categoryCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "slug", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
 	customerCollection := database.Collection("customer")
 	customerCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
@@ -74,77 +71,32 @@ func main() {
 	})
 
 	// repository
-	categoryRepository := repository.NewCategoryRepository(categoryCollection)
 	merchantRepository := repository.NewMerchantRepository(merchantCollection)
 	productRepository := repository.NewProductRepository(productCollection)
+	categoryRepository := repository.NewCategoryRepository(categoryCollection)
 	customerRepository := repository.NewCustomerRepository(customerCollection)
 	cloudinaryRepository := repository.NewCloudinaryRepository(cloud)
 	midtransRepository := repository.NewMidtransRepository(midtransKey)
 
 	// service
-	categoryService := service.NewCategoryService(categoryRepository, cloudinaryRepository, productRepository)
+	authService := service.NewAuthService(merchantRepository, customerRepository)
 	merchantService := service.NewMerchantService(merchantRepository, cloudinaryRepository, productRepository)
 	productService := service.NewProductService(productRepository, cloudinaryRepository, categoryRepository, merchantRepository, customerRepository)
+	categoryService := service.NewCategoryService(categoryRepository, productRepository)
 	customerService := service.NewCustomerService(customerRepository, productRepository, cloudinaryRepository)
 	cartService := service.NewCartService(customerRepository, productRepository)
 	transactionService := service.NewTransactionService(customerRepository, productRepository, midtransRepository, merchantRepository)
-	authService := service.NewAuthService(merchantRepository, customerRepository)
 
 	// controller
-	categoryController := controller.NewCategoryController(categoryService)
+	authController := controller.NewAuthController(authService)
 	merchantController := controller.NewMerchantController(merchantService)
 	productController := controller.NewProductController(productService)
+	categoryController := controller.NewCategoryController(categoryService)
 	customerController := controller.NewCustomerController(customerService)
 	cartController := controller.NewCartController(cartService)
 	transactionController := controller.NewTransactionController(transactionService)
-	authController := controller.NewAuthController(authService)
 
-	// middleware
-
-	router := httprouter.New()
-
-	router.PanicHandler = exception.ErrorHandler
-	router.ServeFiles("/docs/*filepath", http.FS(swagger))
-
-	router.GET("/api/v1/categories/:categoryId", categoryController.FindById)
-	router.GET("/api/v1/categories", categoryController.FindAll)
-	router.POST("/api/v1/categories", middleware.AuthMiddleware(categoryController.Create, "merchant"))
-
-	router.POST("/api/v1/merchants", merchantController.Create)
-	router.GET("/api/v1/merchants/:merchantId", merchantController.FindById)
-	router.GET("/api/v1/merchants/:merchantId/orders", middleware.AuthMiddleware(merchantController.FindManageOrderById, "merchant"))
-	router.PUT("/api/v1/merchants/:merchantId", middleware.AuthMiddleware(merchantController.Update, "merchant"))
-	router.PATCH("/api/v1/merchants/:merchantId/image", middleware.AuthMiddleware(merchantController.UpdateMainImage, "merchant"))
-	router.DELETE("/api/v1/merchants/:merchantId", middleware.AuthMiddleware(merchantController.Delete, "merchant"))
-
-	router.GET("/api/v1/products/:productId", productController.FindById)
-	router.GET("/api/v1/products", productController.FindAll)
-	router.POST("/api/v1/products", middleware.AuthMiddleware(productController.Create, "merchant"))
-	router.PUT("/api/v1/products/:productId", middleware.AuthMiddleware(productController.Update, "merchant"))
-	router.PATCH("/api/v1/products/:productId/image", middleware.AuthMiddleware(productController.UpdateMainImage, "merchant"))
-	router.POST("/api/v1/products/:productId/images", middleware.AuthMiddleware(productController.PushImageIntoImages, "merchant"))
-	router.DELETE("/api/v1/products/:productId/images/:imageId", middleware.AuthMiddleware(productController.PullImageFromImages, "merchant"))
-	router.DELETE("/api/v1/products/:productId", middleware.AuthMiddleware(productController.Delete, "merchant"))
-
-	router.POST("/api/v1/customers/", customerController.Create)
-	router.GET("/api/v1/customers/:customerId", customerController.FindById)
-	router.GET("/api/v1/customers/:customerId/carts", middleware.AuthMiddleware(customerController.FindCartById, "customer"))
-	router.GET("/api/v1/customers/:customerId/transactions", middleware.AuthMiddleware(customerController.FindTransactionById, "customer"))
-	router.GET("/api/v1/customers/:customerId/orders", middleware.AuthMiddleware(customerController.FindOrderById, "customer"))
-	router.PUT("/api/v1/customers/:customerId", middleware.AuthMiddleware(customerController.Update, "customer"))
-	router.PATCH("/api/v1/customers/:customerId/image", middleware.AuthMiddleware(customerController.UpdateMainImage, "customer"))
-	router.DELETE("/api/v1/customers/:customerId", middleware.AuthMiddleware(customerController.Delete, "customer"))
-
-	router.POST("/api/v1/carts/:customerId", middleware.AuthMiddleware(cartController.PushProductToCart, "customer"))
-	router.PATCH("/api/v1/carts/:customerId/products/:productId", middleware.AuthMiddleware(cartController.UpdateProductQuantity, "customer"))
-	router.DELETE("/api/v1/carts/:customerId/products/:productId", middleware.AuthMiddleware(cartController.PullProductFromCart, "customer"))
-
-	router.POST("/api/v1/callback", transactionController.Callback)
-	router.POST("/api/v1/transactions/:customerId", middleware.AuthMiddleware(transactionController.Create, "customer"))
-	router.DELETE("/api/v1/transactions/:customerId/transactions/:transactionId", middleware.AuthMiddleware(transactionController.Cancel, "customer"))
-
-	router.POST("/api/v1/auth/merchant", authController.LoginMerchant)
-	router.POST("/api/v1/auth/customer", authController.LoginCustomer)
+	router := app.NewRouter(swagger, authController, merchantController, productController, categoryController, customerController, cartController, transactionController)
 
 	port := os.Getenv("PORT")
 	if port == "" {
