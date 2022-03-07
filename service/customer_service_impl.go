@@ -41,7 +41,6 @@ func (service *CustomerServiceImpl) Create(ctx context.Context, request web.Cust
 	})
 	helper.PanicIfError(err)
 
-	fmt.Println(res)
 	token := pkg.GenerateToken(web.JWTPayload{
 		Id:   res.Id.Hex(),
 		Role: "customer",
