@@ -12,22 +12,13 @@ var TransactionProduct = schema.TransactionProduct{
 	Quantity:  4,
 }
 
-var TransactionAction = schema.TransactionAction{
-	Name:   "deeplink",
-	Method: "GET",
-	URL:    "https://gopay.com",
-}
-
 var Transaction = schema.Transaction{
 	Id:          primitive.NewObjectID(),
 	CreatedAt:   helper.GetTimeNow(),
 	UpdatedAt:   helper.GetTimeNow(),
 	PaymentType: "gopay",
 	Status:      "pending",
-	Actions: []schema.TransactionAction{
-		TransactionAction,
-		TransactionAction,
-	},
+	QRCode:      "https://gqrodegopaty.com",
 	Products: []schema.TransactionProduct{
 		TransactionProduct,
 		TransactionProduct,
