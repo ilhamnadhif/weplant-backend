@@ -135,22 +135,13 @@ func (service *CustomerServiceImpl) FindTransactionById(ctx context.Context, cus
 			})
 		}
 
-		var actionResponse []web.TransactionActionResponse
-		for _, action := range v.Actions {
-			actionResponse = append(actionResponse, web.TransactionActionResponse{
-				Name:   action.Name,
-				Method: action.Method,
-				URL:    action.URL,
-			})
-		}
-
 		transactionsResponse = append(transactionsResponse, web.TransactionDetailResponse{
 			Id:          v.Id.Hex(),
 			CreatedAt:   v.CreatedAt,
 			UpdatedAt:   v.UpdatedAt,
 			PaymentType: v.PaymentType,
 			Status:      v.Status,
-			Actions:     actionResponse,
+			QRCode:      v.QRCode,
 			TotalPrice:  totalPrice,
 			Products:    productsResponse,
 			Address: web.AddressResponse{

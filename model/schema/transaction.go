@@ -8,19 +8,13 @@ type TransactionProduct struct {
 	Quantity  int    `bson:"quantity,omitempty"`
 }
 
-type TransactionAction struct {
-	Name   string `bson:"name,omitempty"`
-	Method string `bson:"method,omitempty"`
-	URL    string `bson:"url,omitempty"`
-}
-
 type Transaction struct {
 	Id          primitive.ObjectID   `bson:"_id,omitempty"`
 	CreatedAt   int                  `bson:"created_at,omitempty"`
 	UpdatedAt   int                  `bson:"updated_at,omitempty"`
 	PaymentType string               `bson:"payment_type,omitempty"`
 	Status      string               `bson:"status,omitempty"`
-	Actions     []TransactionAction  `bson:"actions,omitempty"`
+	QRCode      string               `bson:"qr_code,omitempty"`
 	Products    []TransactionProduct `bson:"products,omitempty"`
 	Address     *Address             `bson:"address,omitempty"`
 }

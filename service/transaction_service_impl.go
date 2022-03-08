@@ -7,7 +7,6 @@ import (
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"strings"
 	"weplant-backend/helper"
 	"weplant-backend/model/schema"
 	"weplant-backend/model/web"
@@ -73,7 +72,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 	}
 
 	resMidtrans, errMidtrans := service.MidtransRepository.CreateTransaction(coreapi.ChargeReq{
-		PaymentType: coreapi.PaymentTypeGopay,
+		PaymentType: coreapi.PaymentTypeQris,
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  primitive.NewObjectID().Hex(),
 			GrossAmt: totalPrice,
@@ -106,41 +105,13 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 		panic(errMidtrans.GetMessage())
 	}
 
-	var actionsCreateRequest []schema.TransactionAction
-	var actionsResponse []web.TransactionActionResponse
-	for _, action := range resMidtrans.Actions {
-		if strings.ToLower(action.Name) == "generate-qr-code" {
-			actionsCreateRequest = append(actionsCreateRequest, schema.TransactionAction{
-				Name:   action.Name,
-				Method: action.Method,
-				URL:    action.URL,
-			})
-			actionsResponse = append(actionsResponse, web.TransactionActionResponse{
-				Name:   action.Name,
-				Method: action.Method,
-				URL:    action.URL,
-			})
-		} else if strings.ToLower(action.Name) == "deeplink-redirect" {
-			actionsCreateRequest = append(actionsCreateRequest, schema.TransactionAction{
-				Name:   action.Name,
-				Method: action.Method,
-				URL:    action.URL,
-			})
-			actionsResponse = append(actionsResponse, web.TransactionActionResponse{
-				Name:   action.Name,
-				Method: action.Method,
-				URL:    action.URL,
-			})
-		}
-	}
-
 	err = service.CustomerRepository.CreateTransaction(ctx, customer.Id.Hex(), schema.Transaction{
 		Id:          helper.ObjectIDFromHex(resMidtrans.OrderID),
 		CreatedAt:   request.CreatedAt,
 		UpdatedAt:   request.UpdatedAt,
 		PaymentType: resMidtrans.PaymentType,
 		Status:      resMidtrans.TransactionStatus,
-		Actions:     actionsCreateRequest,
+		QRCode:      resMidtrans.Actions[0].URL,
 		Products:    productDetailTransaction,
 		Address: &schema.Address{
 			Address:    request.Address.Address,
@@ -156,7 +127,7 @@ func (service *TransactionServiceImpl) Create(ctx context.Context, request web.T
 		UpdatedAt:   request.UpdatedAt,
 		PaymentType: resMidtrans.PaymentType,
 		Status:      resMidtrans.TransactionStatus,
-		Actions:     actionsResponse,
+		QRCode:      resMidtrans.Actions[0].URL,
 		TotalPrice:  int(totalPrice),
 		Address:     *request.Address,
 	}

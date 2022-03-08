@@ -11,40 +11,10 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000/api/v1"
+      "url": "https://api.weplant-backend.com/api/v1"
     }
   ],
   "paths": {
-    "/auth/admin": {
-      "post": {
-        "tags": [
-          "Authentication"
-        ],
-        "description": "Login For Admin",
-        "summary": "Login For Admin",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success Login Authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/merchant": {
       "post": {
         "tags": [
@@ -105,335 +75,7 @@
         }
       }
     },
-    "/categories": {
-      "post": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Create Category",
-        "summary": "Create Category",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success Create Category",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status`": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "created_at": {
-                          "type": "integer"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "slug": {
-                          "type": "string"
-                        },
-                        "main_image": {
-                          "$ref": "#/components/schemas/ImageCreateRequestResponse"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Get All Category",
-        "summary": "Get All Category",
-        "responses": {
-          "200": {
-            "description": "Success Get All Category",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status`": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CategoryResponse"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/categories/{categoryId}": {
-      "get": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Get Category By Id",
-        "summary": "Get Category By Id",
-        "parameters": [
-          {
-            "name": "categoryId",
-            "in": "path",
-            "description": "Category Id"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success Get Category By Id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status`": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "integer"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "slug": {
-                          "type": "string"
-                        },
-                        "main_image": {
-                          "$ref": "#/components/schemas/ImageResponse"
-                        },
-                        "products": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/ProductResponseAll"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Update Category By Id",
-        "summary": "Update Category By Id",
-        "parameters": [
-          {
-            "name": "categoryId",
-            "in": "path",
-            "description": "Category Id"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success Update Category By Id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status`": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Delete Category By Id",
-        "summary": "Delete Category By Id",
-        "parameters": [
-          {
-            "name": "categoryId",
-            "in": "path",
-            "description": "Category Id"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success Delete Category By Id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status`": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "null"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/categories/{categoryId}/image": {
-      "patch": {
-        "tags": [
-          "Category"
-        ],
-        "description": "Update Main Image Category By Id",
-        "summary": "Update Main Image Category By Id",
-        "parameters": [
-          {
-            "name": "categoryId",
-            "in": "path",
-            "description": "Category Id"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "image": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success Update Main Image Category By Id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "main_image": {
-                          "$ref": "#/components/schemas/ImageCreateRequestResponse"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+
     "/merchants": {
       "post": {
         "tags": [
@@ -486,47 +128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "created_at": {
-                          "type": "integer"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "password": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "slug": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        },
-                        "main_image": {
-                          "$ref": "#/components/schemas/ImageCreateRequestResponse"
-                        },
-                        "address": {
-                          "$ref": "#/components/schemas/Address"
-                        }
-                      }
-                    }
-                  }
+                      "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
@@ -574,6 +176,9 @@
                         "updated_at": {
                           "type": "integer"
                         },
+                        "email": {
+                          "type": "string"
+                        },
                         "name": {
                           "type": "string"
                         },
@@ -586,7 +191,7 @@
                         "products": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/ProductResponseAll"
+                            "$ref": "#/components/schemas/ProductSimpleResponse"
                           }
                         }
                       }
@@ -741,7 +346,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
+                        "merchant_id": {
                           "type": "string"
                         },
                         "products": {
@@ -776,7 +381,7 @@
                               "quantity": {
                                 "type": "integer"
                               },
-                              "sub_total": {
+                              "total_price": {
                                 "type": "integer"
                               },
                               "main_image": {
@@ -863,6 +468,7 @@
         }
       }
     },
+
     "/products": {
       "post": {
         "tags": [
@@ -889,9 +495,6 @@
                     "type": "integer"
                   },
                   "stock": {
-                    "type": "integer"
-                  },
-                  "weight": {
                     "type": "integer"
                   },
                   "image": {
@@ -933,6 +536,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
+                        "id": {
+                          "type": "string"
+                        },
                         "created_at": {
                           "type": "integer"
                         },
@@ -943,6 +549,9 @@
                           "type": "string"
                         },
                         "name": {
+                          "type": "string"
+                        },
+                        "slug": {
                           "type": "string"
                         },
                         "description": {
@@ -1004,9 +613,28 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductResponseAll"
+                      "type": "object",
+                      "properties": {
+                        "products": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductSimpleResponse"
+                          }
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "properties": {
+                            "current_page": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total_data": {
+                              "type": "integer"
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -1057,9 +685,6 @@
                         "updated_at": {
                           "type": "integer"
                         },
-                        "merchant_id": {
-                          "type": "string"
-                        },
                         "name": {
                           "type": "string"
                         },
@@ -1088,6 +713,29 @@
                           "type": "array",
                           "items": {
                             "$ref": "#/components/schemas/CategoryResponse"
+                          }
+                        },
+                        "merchant": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "main_image": {
+                              "$ref": "#/components/schemas/ImageResponse"
+                            },
+                            "address": {
+                              "$ref": "#/components/schemas/Address"
+                            }
                           }
                         }
                       }
@@ -1405,6 +1053,169 @@
         }
       }
     },
+
+    "/categories": {
+      "post": {
+        "tags": [
+          "Category"
+        ],
+        "description": "Create Category",
+        "summary": "Create Category",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success Create Category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "status`": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "integer"
+                        },
+                        "updated_at": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Category"
+        ],
+        "description": "Get All Category",
+        "summary": "Get All Category",
+        "responses": {
+          "200": {
+            "description": "Success Get All Category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "status`": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CategoryResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}": {
+      "get": {
+        "tags": [
+          "Category"
+        ],
+        "description": "Get Category By Id",
+        "summary": "Get Category By Id",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "description": "Category Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success Get Category By Id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "status`": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "integer"
+                        },
+                        "updated_at": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "main_image": {
+                          "$ref": "#/components/schemas/ImageResponse"
+                        },
+                        "products": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ProductSimpleResponse"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "/customers": {
       "post": {
         "tags": [
@@ -1441,38 +1252,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "created_at": {
-                          "type": "integer"
-                        },
-                        "updated_at": {
-                          "type": "integer"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "password": {
-                          "type": "string"
-                        },
-                        "user_name": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
@@ -1704,9 +1484,6 @@
                               "quantity": {
                                 "type": "integer"
                               },
-                              "sub_total": {
-                                "type": "integer"
-                              },
                               "main_image": {
                                 "$ref": "#/components/schemas/ImageResponse"
                               }
@@ -1771,6 +1548,9 @@
                               "updated_at": {
                                 "type": "integer"
                               },
+                              "payment_type": {
+                                "type": "string"
+                              },
                               "status": {
                                 "type": "string"
                               },
@@ -1801,9 +1581,6 @@
                                       "type": "integer"
                                     },
                                     "quantity": {
-                                      "type": "integer"
-                                    },
-                                    "sub_total": {
                                       "type": "integer"
                                     },
                                     "main_image": {
@@ -1894,9 +1671,6 @@
                               "quantity": {
                                 "type": "integer"
                               },
-                              "sub_total": {
-                                "type": "integer"
-                              },
                               "main_image": {
                                 "$ref": "#/components/schemas/ImageResponse"
                               },
@@ -1916,6 +1690,7 @@
         }
       }
     },
+
     "/carts/{customerId}": {
       "post": {
         "tags": [
@@ -2015,7 +1790,7 @@
         },
         "responses": {
           "200": {
-            "description": "Success Push Product To Cart By Customer Id",
+            "description": "Success Update Quantity Product From Cart By Customer Id",
             "content": {
               "application/json": {
                 "schema": {
@@ -2030,9 +1805,6 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "updated_at": {
-                          "type": "integer"
-                        },
                         "customer_id": {
                           "type": "string"
                         },
@@ -2094,6 +1866,7 @@
         }
       }
     },
+
     "/transactions": {
       "post": {
         "tags": [
@@ -2140,7 +1913,7 @@
                         "updated_at": {
                           "type": "integer"
                         },
-                        "customer_id": {
+                        "payment_type": {
                           "type": "string"
                         },
                         "status": {
@@ -2268,17 +2041,11 @@
           }
         }
       },
-      "ProductResponseAll": {
+      "ProductSimpleResponse": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
-          },
-          "created_at": {
-            "type": "integer"
-          },
-          "updated_at": {
-            "type": "integer"
           },
           "merchant_id": {
             "type": "string"

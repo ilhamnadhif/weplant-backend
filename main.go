@@ -14,6 +14,7 @@ import (
 	"weplant-backend/app"
 	"weplant-backend/controller"
 	"weplant-backend/helper"
+	"weplant-backend/pkg"
 	"weplant-backend/repository"
 	"weplant-backend/service"
 )
@@ -26,7 +27,7 @@ func main() {
 	swagger, err := fs.Sub(spec, "swagger")
 	helper.PanicIfError(err)
 
-	//pkg.GoDotENV()
+	pkg.GoDotENV()
 
 	client := app.GetConnection()
 	defer app.CloseConnection(client)
