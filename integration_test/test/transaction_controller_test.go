@@ -150,10 +150,7 @@ func TestCancelTransaction_Success(t *testing.T) {
 			UpdatedAt:   helper.GetTimeNow(),
 			PaymentType: "gopay",
 			Status:      "pending",
-			Actions: []schema.TransactionAction{
-				schema_mock.TransactionAction,
-				schema_mock.TransactionAction,
-			},
+			QRCode: "https://google.com",
 			Products: []schema.TransactionProduct{
 				schema_mock.TransactionProduct,
 				schema_mock.TransactionProduct,
@@ -207,10 +204,7 @@ func TestCancelTransaction_FailedUnauthorized(t *testing.T) {
 			UpdatedAt:   helper.GetTimeNow(),
 			PaymentType: "gopay",
 			Status:      "pending",
-			Actions: []schema.TransactionAction{
-				schema_mock.TransactionAction,
-				schema_mock.TransactionAction,
-			},
+			QRCode: "https://google.com",
 			Products: []schema.TransactionProduct{
 				schema_mock.TransactionProduct,
 				schema_mock.TransactionProduct,
