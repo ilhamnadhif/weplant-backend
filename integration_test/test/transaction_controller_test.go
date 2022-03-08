@@ -32,7 +32,14 @@ func TestCreateTransaction_Success(t *testing.T) {
 		TransactionID: primitive.NewObjectID().Hex(),
 		OrderID:       primitive.NewObjectID().Hex(),
 		GrossAmount:   "200000",
-		PaymentType:   "gopay",
+		PaymentType:   "qris",
+		Actions: []coreapi.Action{
+			{
+				Name:   "qr-code",
+				Method: "GET",
+				URL:    "http://google.com",
+			},
+		},
 	}, nil)
 	config.CustomerRepository.Mock.On("CreateTransaction", context.Background(), mock.Anything, mock.Anything).Return(nil)
 
