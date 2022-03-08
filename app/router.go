@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"weplant-backend/controller"
+	"weplant-backend/exception"
 	"weplant-backend/middleware"
 )
 
@@ -12,7 +13,7 @@ func NewRouter(swagger fs.FS, authController controller.AuthController, merchant
 
 	router := httprouter.New()
 
-	//router.PanicHandler = exception.ErrorHandler
+	router.PanicHandler = exception.ErrorHandler
 
 	router.ServeFiles("/docs/*filepath", http.FS(swagger))
 
