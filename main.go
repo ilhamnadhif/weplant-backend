@@ -5,6 +5,7 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+	"github.com/rs/cors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -98,6 +99,8 @@ func main() {
 
 	router := app.NewRouter(swagger, authController, merchantController, productController, categoryController, customerController, cartController, transactionController)
 
+	handler := cors.Default().Handler(router)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -106,7 +109,7 @@ func main() {
 
 	server := http.Server{
 		Addr:    ":" + port,
-		Handler: router,
+		Handler: handler,
 	}
 	err = server.ListenAndServe()
 	helper.PanicIfError(err)
